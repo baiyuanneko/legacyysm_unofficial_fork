@@ -1,6 +1,6 @@
 package com.elfmcys.yesstevemodel.config;
 
-import net.minecraftforge.common.ForgeConfigSpec;
+import net.neoforged.common.ForgeConfigSpec;
 
 public class GeneralConfig {
     public static ForgeConfigSpec.BooleanValue DISCLAIMER_SHOW;

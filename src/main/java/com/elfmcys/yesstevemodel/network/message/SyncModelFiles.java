@@ -8,7 +8,7 @@ import com.elfmcys.yesstevemodel.util.UuidUtils;
 import com.google.common.collect.Lists;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkEvent;
+import net.neoforged.network.NetworkEvent;
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;

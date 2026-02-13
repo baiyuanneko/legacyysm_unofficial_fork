@@ -6,7 +6,7 @@ import com.elfmcys.yesstevemodel.model.ServerModelManager;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkEvent;
+import net.neoforged.network.NetworkEvent;
 
 import java.util.function.Supplier;
 

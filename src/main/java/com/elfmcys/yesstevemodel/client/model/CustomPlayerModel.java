@@ -17,7 +17,7 @@ import com.elfmcys.yesstevemodel.util.ModelIdUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
-import net.minecraftforge.fml.ModList;
+import net.neoforged.fml.ModList;
 
 import javax.annotation.Nullable;
 import java.util.List;

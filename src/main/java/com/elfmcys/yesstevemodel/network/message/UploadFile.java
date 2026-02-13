@@ -4,7 +4,7 @@ import com.elfmcys.yesstevemodel.model.ServerModelManager;
 import com.elfmcys.yesstevemodel.network.NetworkHandler;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkEvent;
+import net.neoforged.network.NetworkEvent;
 import org.apache.commons.io.FileUtils;
 
 import java.io.IOException;

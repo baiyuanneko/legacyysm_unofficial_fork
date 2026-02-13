@@ -3,7 +3,7 @@ package com.elfmcys.yesstevemodel.client.gui.button;
 import com.elfmcys.yesstevemodel.util.Keep;
 import net.minecraft.client.gui.components.Checkbox;
 import net.minecraft.network.chat.Component;
-import net.minecraftforge.common.ForgeConfigSpec;
+import net.neoforged.common.ForgeConfigSpec;
 
 public class ConfigCheckBox extends Checkbox {
     private final ForgeConfigSpec.BooleanValue configSpec;

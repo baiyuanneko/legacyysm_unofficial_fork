@@ -6,15 +6,15 @@ import com.elfmcys.yesstevemodel.client.compat.FirstPersonCompat;
 import com.elfmcys.yesstevemodel.client.gui.DebugAnimationScreen;
 import com.elfmcys.yesstevemodel.client.gui.ExtraPlayerScreen;
 import com.elfmcys.yesstevemodel.client.input.*;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
-import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.ModList;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.client.event.RegisterGuiOverlaysEvent;
+import net.neoforged.client.event.RegisterKeyMappingsEvent;
+import net.neoforged.eventbus.api.SubscribeEvent;
+import net.neoforged.fml.ModList;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 
-import static net.minecraftforge.client.gui.overlay.VanillaGuiOverlay.DEBUG_TEXT;
+import static net.neoforged.client.gui.overlay.VanillaGuiOverlay.DEBUG_TEXT;
 
 @Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT, modid = YesSteveModel.MOD_ID)
 public class ClientSetupEvent {

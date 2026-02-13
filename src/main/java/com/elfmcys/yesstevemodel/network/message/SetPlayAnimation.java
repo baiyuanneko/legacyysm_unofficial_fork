@@ -3,7 +3,7 @@ package com.elfmcys.yesstevemodel.network.message;
 import com.elfmcys.yesstevemodel.capability.ModelInfoCapabilityProvider;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkEvent;
+import net.neoforged.network.NetworkEvent;
 
 import java.util.function.Supplier;
 

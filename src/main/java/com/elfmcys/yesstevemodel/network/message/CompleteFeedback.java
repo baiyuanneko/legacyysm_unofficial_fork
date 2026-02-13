@@ -2,7 +2,7 @@ package com.elfmcys.yesstevemodel.network.message;
 
 import com.elfmcys.yesstevemodel.client.upload.UploadManager;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.network.NetworkEvent;
+import net.neoforged.network.NetworkEvent;
 
 import java.util.function.Supplier;
 

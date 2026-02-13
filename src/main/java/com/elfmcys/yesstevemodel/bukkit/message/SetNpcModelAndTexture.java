@@ -2,7 +2,7 @@ package com.elfmcys.yesstevemodel.bukkit.message;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.network.NetworkEvent;
+import net.neoforged.network.NetworkEvent;
 
 import java.util.function.Supplier;
 

@@ -9,10 +9,10 @@ import com.elfmcys.yesstevemodel.network.message.*;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
-import net.minecraftforge.network.NetworkDirection;
-import net.minecraftforge.network.NetworkRegistry;
-import net.minecraftforge.network.PacketDistributor;
-import net.minecraftforge.network.simple.SimpleChannel;
+import net.neoforged.network.NetworkDirection;
+import net.neoforged.network.NetworkRegistry;
+import net.neoforged.network.PacketDistributor;
+import net.neoforged.network.simple.SimpleChannel;
 
 import java.util.Optional;
 

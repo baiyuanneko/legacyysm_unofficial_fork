@@ -28,7 +28,7 @@ import net.minecraft.world.scores.Objective;
 import net.minecraft.world.scores.Score;
 import net.minecraft.world.scores.Scoreboard;
 import net.minecraft.world.scores.Team;
-import net.minecraftforge.common.MinecraftForge;
+import net.neoforged.common.MinecraftForge;
 import org.jetbrains.annotations.Nullable;
 
 public class CustomPlayerRenderer extends GeoReplacedEntityRenderer<CustomPlayerEntity> {

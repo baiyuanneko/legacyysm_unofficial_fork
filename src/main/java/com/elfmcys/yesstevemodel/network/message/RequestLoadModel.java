@@ -8,7 +8,7 @@ import com.elfmcys.yesstevemodel.util.ThreadTools;
 import com.elfmcys.yesstevemodel.util.UuidUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.network.NetworkEvent;
+import net.neoforged.network.NetworkEvent;
 import org.apache.commons.io.FileUtils;
 
 import java.nio.file.Path;

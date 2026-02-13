@@ -12,15 +12,15 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.event.AttachCapabilitiesEvent;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.entity.EntityJoinLevelEvent;
-import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.LogicalSide;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.network.NetworkDirection;
+import net.neoforged.common.util.LazyOptional;
+import net.neoforged.event.AttachCapabilitiesEvent;
+import net.neoforged.event.TickEvent;
+import net.neoforged.event.entity.EntityJoinLevelEvent;
+import net.neoforged.event.entity.player.PlayerEvent;
+import net.neoforged.eventbus.api.SubscribeEvent;
+import net.neoforged.fml.LogicalSide;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.network.NetworkDirection;
 
 @Mod.EventBusSubscriber(modid = YesSteveModel.MOD_ID)
 public final class CapabilityEvent {

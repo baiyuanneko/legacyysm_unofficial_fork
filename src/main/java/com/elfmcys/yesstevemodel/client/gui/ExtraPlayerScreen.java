@@ -7,8 +7,8 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraftforge.client.gui.overlay.ForgeGui;
-import net.minecraftforge.client.gui.overlay.IGuiOverlay;
+import net.neoforged.client.gui.overlay.ForgeGui;
+import net.neoforged.client.gui.overlay.IGuiOverlay;
 
 public class ExtraPlayerScreen implements IGuiOverlay {
     @Override
