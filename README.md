@@ -1,3 +1,33 @@
+
+
+# legacyysm_unofficial_fork
+
+## 说明
+
+这是一个非官方的对旧版 Yes Steve Model 1.1.5 版本(即 <https://github.com/YesSteveModel/LgeacyYSM/> ) 源代码的 Fork 和修改版本，目前主要是进行了对 Neoforge 1.21.1 的改造和支持。
+
+向 1.21.1 的代码迁移工作主要由 GLM-5 完成，可能存在很多问题。目前测试功能正常的包括：
+
+客户端：
+- 模型显示
+- 模型列表（Alt + Y）、模型更换、模型展示
+- 轮盘动画（Alt + Z）
+
+服务端：
+
+Work In Progress.
+
+
+## Why this project
+
+由于官方版 YSM 在更新新版本后，将核心部分使用 C++ 重写，导致新版本无法直接跨平台，因而暂时还未支持 OS X 系统，而本项目基于的旧版可以支持跨平台使用，可以弥补官方版 YSM 无法在 OS X 系统使用的不足。 
+
+---
+
+# 以下为官方版LegacyYSM的说明文档
+
+---
+
 # LegacyYSM 1.1.5 旧版 YSM 源码仓库
 
 ![Minecraft](https://img.shields.io/badge/Minecraft-Java%20Edition-brightgreen)

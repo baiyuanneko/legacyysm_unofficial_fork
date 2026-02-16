@@ -1,0 +1,8 @@
+package moe.byn.minecraftmod.legacyysm.geckolib3.model.provider.data;
+
+public class EntityModelData {
+    public boolean isSitting;
+    public boolean isChild;
+    public float netHeadYaw;
+    public float headPitch;
+}

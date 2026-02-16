@@ -15,10 +15,10 @@
 -obfuscationdictionary dict.txt
 -packageobfuscationdictionary dict.txt
 -classobfuscationdictionary dict.txt
--repackageclasses com.elfmcys.yesstevemodel
+-repackageclasses moe.byn.minecraftmod.legacyysm
 
 # 保留唯一的主模组类
--keep class com.elfmcys.yesstevemodel.YesSteveModel
+-keep class moe.byn.minecraftmod.legacyysm.YesSteveModel
 
 # 保留部分枚举类属性
 -keepclassmembers enum * {
@@ -28,8 +28,8 @@
 
 # 保留所有用 @Keep 注解标记的方法或者变量
 -keepclassmembers class * {
-    @com.elfmcys.yesstevemodel.util.Keep <fields>;
-    @com.elfmcys.yesstevemodel.util.Keep <methods>;
+    @moe.byn.minecraftmod.legacyysm.util.Keep <fields>;
+    @moe.byn.minecraftmod.legacyysm.util.Keep <methods>;
 }
 
 # 保留异常、内部类、注解、行数等信息
