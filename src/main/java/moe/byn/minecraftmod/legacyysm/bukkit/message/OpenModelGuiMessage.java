@@ -1,16 +1,12 @@
 package moe.byn.minecraftmod.legacyysm.bukkit.message;
 
-import moe.byn.minecraftmod.legacyysm.client.gui.PlayerModelScreen;
+import moe.byn.minecraftmod.legacyysm.YesSteveModel;
 import io.netty.buffer.ByteBuf;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 public class OpenModelGuiMessage implements CustomPacketPayload {
@@ -48,15 +44,38 @@ public class OpenModelGuiMessage implements CustomPacketPayload {
         context.enqueueWork(() -> handleMessage(message));
     }
 
-    @OnlyIn(Dist.CLIENT)
     private static void handleMessage(OpenModelGuiMessage message) {
-        LocalPlayer localPlayer = Minecraft.getInstance().player;
-        if (localPlayer != null) {
-            Entity entity = localPlayer.level().getEntity(message.entityId);
-            if (entity instanceof Player player) {
-                CURRENT_NPC_ID = message.npcId;
-                Minecraft.getInstance().setScreen(new PlayerModelScreen(player));
+        try {
+            Class<?> minecraftClass = Class.forName("net.minecraft.client.Minecraft");
+            java.lang.reflect.Method getInstanceMethod = minecraftClass.getMethod("getInstance");
+            Object mc = getInstanceMethod.invoke(null);
+            
+            java.lang.reflect.Field playerField = minecraftClass.getDeclaredField("player");
+            Object localPlayer = playerField.get(mc);
+            
+            if (localPlayer != null) {
+                Class<?> localPlayerClass = localPlayer.getClass();
+                java.lang.reflect.Method levelMethod = localPlayerClass.getMethod("level");
+                Object level = levelMethod.invoke(localPlayer);
+                
+                Class<?> levelClass = level.getClass();
+                java.lang.reflect.Method getEntityMethod = levelClass.getMethod("getEntity", int.class);
+                Entity entity = (Entity) getEntityMethod.invoke(level, message.entityId);
+                
+                if (entity instanceof Player player) {
+                    CURRENT_NPC_ID = message.npcId;
+                    
+                    Class<?> playerModelScreenClass = Class.forName("moe.byn.minecraftmod.legacyysm.client.gui.PlayerModelScreen");
+                    java.lang.reflect.Constructor<?> constructor = playerModelScreenClass.getConstructor(Player.class);
+                    Object screen = constructor.newInstance(player);
+                    
+                    java.lang.reflect.Method setScreenMethod = minecraftClass.getMethod("setScreen", 
+                        Class.forName("net.minecraft.client.gui.screens.Screen"));
+                    setScreenMethod.invoke(mc, screen);
+                }
             }
+        } catch (Exception e) {
+            YesSteveModel.LOGGER.error("Failed to handle OpenModelGuiMessage", e);
         }
     }
 }

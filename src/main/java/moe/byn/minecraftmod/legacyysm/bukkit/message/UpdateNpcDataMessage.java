@@ -1,15 +1,11 @@
 package moe.byn.minecraftmod.legacyysm.bukkit.message;
 
-import moe.byn.minecraftmod.legacyysm.bukkit.client.NPCData;
+import moe.byn.minecraftmod.legacyysm.YesSteveModel;
 import io.netty.buffer.ByteBuf;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 import java.util.UUID;
@@ -52,11 +48,22 @@ public class UpdateNpcDataMessage implements CustomPacketPayload {
         context.enqueueWork(() -> handleMessage(message));
     }
 
-    @OnlyIn(Dist.CLIENT)
     private static void handleMessage(UpdateNpcDataMessage message) {
-        LocalPlayer localPlayer = Minecraft.getInstance().player;
-        if (localPlayer != null) {
-            NPCData.put(message.uuid, message.modelId, message.textureId);
+        try {
+            Class<?> minecraftClass = Class.forName("net.minecraft.client.Minecraft");
+            java.lang.reflect.Method getInstanceMethod = minecraftClass.getMethod("getInstance");
+            Object mc = getInstanceMethod.invoke(null);
+            
+            java.lang.reflect.Field playerField = minecraftClass.getDeclaredField("player");
+            Object localPlayer = playerField.get(mc);
+            
+            if (localPlayer != null) {
+                Class<?> npcDataClass = Class.forName("moe.byn.minecraftmod.legacyysm.bukkit.client.NPCData");
+                java.lang.reflect.Method putMethod = npcDataClass.getMethod("put", UUID.class, ResourceLocation.class, ResourceLocation.class);
+                putMethod.invoke(null, message.uuid, message.modelId, message.textureId);
+            }
+        } catch (Exception e) {
+            YesSteveModel.LOGGER.error("Failed to handle UpdateNpcDataMessage", e);
         }
     }
 }

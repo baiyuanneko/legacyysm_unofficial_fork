@@ -5,7 +5,6 @@ import moe.byn.minecraftmod.legacyysm.capability.ModelInfoCapability;
 import moe.byn.minecraftmod.legacyysm.capability.YSMAttachments;
 import moe.byn.minecraftmod.legacyysm.util.ThreadTools;
 import io.netty.buffer.ByteBuf;
-import net.minecraft.client.Minecraft;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -58,24 +57,58 @@ public class SyncModelInfo implements CustomPacketPayload {
     }
 
     private static void handleCapability(SyncModelInfo message) {
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.level != null) {
-            ThreadTools.THREAD_POOL.submit(() -> {
-                        try {
-                            int time = 0;
-                            while (mc.level.getEntity(message.entityId) == null && time < 5) {
-                                Thread.sleep(500);
-                                time++;
-                            }
-                            Entity entity = mc.level.getEntity(message.entityId);
-                            if (entity instanceof Player player) {
-                                player.getData(YSMAttachments.MODEL_INFO).copyFrom(message.capability);
-                            }
-                        } catch (InterruptedException e) {
-                            throw new RuntimeException(e);
-                        }
-                    }
-            );
+        Object mc = getMinecraftInstance();
+        if (mc == null) return;
+        
+        Object level = getLevelFromMinecraft(mc);
+        if (level == null) return;
+        
+        ThreadTools.THREAD_POOL.submit(() -> {
+            try {
+                int time = 0;
+                Entity entity = null;
+                while (time < 5) {
+                    entity = getEntityFromLevel(level, message.entityId);
+                    if (entity != null) break;
+                    Thread.sleep(500);
+                    time++;
+                }
+                if (entity instanceof Player player) {
+                    player.getData(YSMAttachments.MODEL_INFO).copyFrom(message.capability);
+                }
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+    
+    private static Object getMinecraftInstance() {
+        try {
+            Class<?> minecraftClass = Class.forName("net.minecraft.client.Minecraft");
+            java.lang.reflect.Method getInstanceMethod = minecraftClass.getMethod("getInstance");
+            return getInstanceMethod.invoke(null);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+    
+    private static Object getLevelFromMinecraft(Object minecraft) {
+        try {
+            Class<?> minecraftClass = minecraft.getClass();
+            java.lang.reflect.Field levelField = minecraftClass.getDeclaredField("level");
+            return levelField.get(minecraft);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+    
+    private static Entity getEntityFromLevel(Object level, int entityId) {
+        try {
+            Class<?> levelClass = level.getClass();
+            java.lang.reflect.Method getEntityMethod = levelClass.getMethod("getEntity", int.class);
+            return (Entity) getEntityMethod.invoke(level, entityId);
+        } catch (Exception e) {
+            return null;
         }
     }
 }

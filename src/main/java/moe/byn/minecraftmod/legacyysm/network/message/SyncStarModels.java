@@ -4,7 +4,6 @@ import moe.byn.minecraftmod.legacyysm.YesSteveModel;
 import moe.byn.minecraftmod.legacyysm.capability.YSMAttachments;
 import com.google.common.collect.Sets;
 import io.netty.buffer.ByteBuf;
-import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -56,9 +55,31 @@ public class SyncStarModels implements CustomPacketPayload {
     }
 
     private static void handleCapability(SyncStarModels message) {
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.player != null) {
-            mc.player.getData(YSMAttachments.STAR_MODELS).setStarModels(message.starModels);
+        try {
+            Class<?> minecraftClass = Class.forName("net.minecraft.client.Minecraft");
+            java.lang.reflect.Method getInstanceMethod = minecraftClass.getMethod("getInstance");
+            Object mc = getInstanceMethod.invoke(null);
+            
+            java.lang.reflect.Field playerField = minecraftClass.getDeclaredField("player");
+            Object player = playerField.get(mc);
+            
+            if (player != null) {
+                Class<?> playerClass = player.getClass();
+                java.lang.reflect.Method getDataMethod = playerClass.getMethod("getData", 
+                    Class.forName("net.neoforged.neoforge.attachment.AttachmentType"));
+                
+                Class<?> attachmentsClass = Class.forName("moe.byn.minecraftmod.legacyysm.capability.YSMAttachments");
+                java.lang.reflect.Field starModelsField = attachmentsClass.getField("STAR_MODELS");
+                Object starModelsAttachment = starModelsField.get(null);
+                
+                Object starModelsCap = getDataMethod.invoke(player, starModelsAttachment);
+                
+                Class<?> capClass = starModelsCap.getClass();
+                java.lang.reflect.Method setStarModelsMethod = capClass.getMethod("setStarModels", Set.class);
+                setStarModelsMethod.invoke(starModelsCap, message.starModels);
+            }
+        } catch (Exception e) {
+            YesSteveModel.LOGGER.error("Failed to handle SyncStarModels", e);
         }
     }
 }

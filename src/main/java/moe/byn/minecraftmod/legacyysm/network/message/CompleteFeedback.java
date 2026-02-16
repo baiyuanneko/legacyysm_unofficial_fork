@@ -1,7 +1,6 @@
 package moe.byn.minecraftmod.legacyysm.network.message;
 
 import moe.byn.minecraftmod.legacyysm.YesSteveModel;
-import moe.byn.minecraftmod.legacyysm.client.upload.UploadManager;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -26,6 +25,14 @@ public class CompleteFeedback implements CustomPacketPayload {
     }
 
     public static void handleClient(CompleteFeedback message, IPayloadContext context) {
-        context.enqueueWork(UploadManager::finishUpload);
+        context.enqueueWork(() -> {
+            try {
+                Class<?> uploadManagerClass = Class.forName("moe.byn.minecraftmod.legacyysm.client.upload.UploadManager");
+                java.lang.reflect.Method finishUploadMethod = uploadManagerClass.getMethod("finishUpload");
+                finishUploadMethod.invoke(null);
+            } catch (Exception e) {
+                YesSteveModel.LOGGER.error("Failed to finish upload", e);
+            }
+        });
     }
 }

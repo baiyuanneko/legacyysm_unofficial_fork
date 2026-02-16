@@ -1,7 +1,6 @@
 package moe.byn.minecraftmod.legacyysm.model;
 
 import moe.byn.minecraftmod.legacyysm.YesSteveModel;
-import moe.byn.minecraftmod.legacyysm.client.ClientModelManager;
 import moe.byn.minecraftmod.legacyysm.data.EncryptTools;
 import moe.byn.minecraftmod.legacyysm.model.format.FolderFormat;
 import moe.byn.minecraftmod.legacyysm.model.format.ServerModelInfo;
@@ -15,6 +14,8 @@ import com.google.common.collect.Sets;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.players.PlayerList;
 import net.minecraft.world.entity.player.Player;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.fml.loading.FMLEnvironment;
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;
@@ -76,7 +77,9 @@ public final class ServerModelManager {
     }
 
     public static void sendRequestSyncModelMessage() {
-        ClientModelManager.sendSyncModelMessage();
+        if (FMLEnvironment.dist == Dist.DEDICATED_SERVER) {
+            YesSteveModel.LOGGER.warn("sendRequestSyncModelMessage() called on dedicated server - use sendRequestSyncModelMessage(PlayerList) instead");
+        }
     }
 
     public static void sendRequestSyncModelMessage(Player player) {

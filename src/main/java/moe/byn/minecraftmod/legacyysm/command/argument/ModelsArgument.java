@@ -1,6 +1,5 @@
 package moe.byn.minecraftmod.legacyysm.command.argument;
 
-import moe.byn.minecraftmod.legacyysm.client.ClientModelManager;
 import moe.byn.minecraftmod.legacyysm.model.ServerModelManager;
 import moe.byn.minecraftmod.legacyysm.util.Keep;
 import com.mojang.brigadier.StringReader;
@@ -18,6 +17,7 @@ import net.neoforged.fml.loading.FMLEnvironment;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Stream;
 
 public class ModelsArgument implements ArgumentType<String> {
     private static final Collection<String> EXAMPLES = Collections.singleton("default");
@@ -46,10 +46,22 @@ public class ModelsArgument implements ArgumentType<String> {
             if (FMLEnvironment.dist == Dist.DEDICATED_SERVER) {
                 return SharedSuggestionProvider.suggest(ServerModelManager.CACHE_NAME_INFO.keySet(), builder);
             } else {
-                return SharedSuggestionProvider.suggest(ClientModelManager.MODELS.keySet().stream().map(ResourceLocation::getPath), builder);
+                return SharedSuggestionProvider.suggest(getClientModelNames(), builder);
             }
         } else {
             return Suggestions.empty();
+        }
+    }
+    
+    @SuppressWarnings("unchecked")
+    private static Stream<String> getClientModelNames() {
+        try {
+            Class<?> clientModelManagerClass = Class.forName("moe.byn.minecraftmod.legacyysm.client.ClientModelManager");
+            java.lang.reflect.Field modelsField = clientModelManagerClass.getDeclaredField("MODELS");
+            java.util.Map<ResourceLocation, ?> models = (java.util.Map<ResourceLocation, ?>) modelsField.get(null);
+            return models.keySet().stream().map(ResourceLocation::getPath);
+        } catch (Exception e) {
+            return Stream.empty();
         }
     }
 

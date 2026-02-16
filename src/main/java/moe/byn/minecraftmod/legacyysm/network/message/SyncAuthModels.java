@@ -4,7 +4,6 @@ import moe.byn.minecraftmod.legacyysm.YesSteveModel;
 import moe.byn.minecraftmod.legacyysm.capability.YSMAttachments;
 import com.google.common.collect.Sets;
 import io.netty.buffer.ByteBuf;
-import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -56,9 +55,31 @@ public class SyncAuthModels implements CustomPacketPayload {
     }
 
     private static void handleCapability(SyncAuthModels message) {
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.player != null) {
-            mc.player.getData(YSMAttachments.AUTH_MODELS).setAuthModels(message.authModels);
+        try {
+            Class<?> minecraftClass = Class.forName("net.minecraft.client.Minecraft");
+            java.lang.reflect.Method getInstanceMethod = minecraftClass.getMethod("getInstance");
+            Object mc = getInstanceMethod.invoke(null);
+            
+            java.lang.reflect.Field playerField = minecraftClass.getDeclaredField("player");
+            Object player = playerField.get(mc);
+            
+            if (player != null) {
+                Class<?> playerClass = player.getClass();
+                java.lang.reflect.Method getDataMethod = playerClass.getMethod("getData", 
+                    Class.forName("net.neoforged.neoforge.attachment.AttachmentType"));
+                
+                Class<?> attachmentsClass = Class.forName("moe.byn.minecraftmod.legacyysm.capability.YSMAttachments");
+                java.lang.reflect.Field authModelsField = attachmentsClass.getField("AUTH_MODELS");
+                Object authModelsAttachment = authModelsField.get(null);
+                
+                Object authModelsCap = getDataMethod.invoke(player, authModelsAttachment);
+                
+                Class<?> capClass = authModelsCap.getClass();
+                java.lang.reflect.Method setAuthModelsMethod = capClass.getMethod("setAuthModels", Set.class);
+                setAuthModelsMethod.invoke(authModelsCap, message.authModels);
+            }
+        } catch (Exception e) {
+            YesSteveModel.LOGGER.error("Failed to handle SyncAuthModels", e);
         }
     }
 }

@@ -1,7 +1,6 @@
 package moe.byn.minecraftmod.legacyysm.command.argument;
 
 import moe.byn.minecraftmod.legacyysm.YesSteveModel;
-import moe.byn.minecraftmod.legacyysm.client.ClientModelManager;
 import moe.byn.minecraftmod.legacyysm.model.ServerModelManager;
 import moe.byn.minecraftmod.legacyysm.util.Keep;
 import moe.byn.minecraftmod.legacyysm.util.ModelIdUtil;
@@ -57,14 +56,26 @@ public class TexturesArgument implements ArgumentType<String> {
                 }
             } else {
                 ResourceLocation modelId = ResourceLocation.fromNamespaceAndPath(YesSteveModel.MOD_ID, modelName);
-                if (ClientModelManager.MODELS.containsKey(modelId)) {
-                    List<ResourceLocation> textures = ClientModelManager.MODELS.get(modelId);
-                    Stream<String> stream = textures.stream().map(ModelIdUtil::getSubNameFromId).filter(StringUtils::isNoneBlank);
-                    return SharedSuggestionProvider.suggest(stream, builder);
-                }
+                return SharedSuggestionProvider.suggest(getClientTextureNames(modelId), builder);
             }
         }
         return Suggestions.empty();
+    }
+    
+    @SuppressWarnings("unchecked")
+    private static Stream<String> getClientTextureNames(ResourceLocation modelId) {
+        try {
+            Class<?> clientModelManagerClass = Class.forName("moe.byn.minecraftmod.legacyysm.client.ClientModelManager");
+            java.lang.reflect.Field modelsField = clientModelManagerClass.getDeclaredField("MODELS");
+            java.util.Map<ResourceLocation, List<ResourceLocation>> models = 
+                (java.util.Map<ResourceLocation, List<ResourceLocation>>) modelsField.get(null);
+            if (models.containsKey(modelId)) {
+                List<ResourceLocation> textures = models.get(modelId);
+                return textures.stream().map(ModelIdUtil::getSubNameFromId).filter(StringUtils::isNoneBlank);
+            }
+        } catch (Exception e) {
+        }
+        return Stream.empty();
     }
 
     @Override

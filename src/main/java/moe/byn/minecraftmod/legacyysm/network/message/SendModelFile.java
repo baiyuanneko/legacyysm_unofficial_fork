@@ -1,7 +1,6 @@
 package moe.byn.minecraftmod.legacyysm.network.message;
 
 import moe.byn.minecraftmod.legacyysm.YesSteveModel;
-import moe.byn.minecraftmod.legacyysm.client.ClientModelManager;
 import moe.byn.minecraftmod.legacyysm.model.ServerModelManager;
 import moe.byn.minecraftmod.legacyysm.util.Md5Utils;
 import io.netty.buffer.ByteBuf;
@@ -47,7 +46,7 @@ public class SendModelFile implements CustomPacketPayload {
     public static void handleClient(SendModelFile message, IPayloadContext context) {
         context.enqueueWork(() -> {
             if (message.data.length == 48) {
-                ClientModelManager.PASSWORD = message.data;
+                setClientPassword(message.data);
             } else {
                 String fileName = Md5Utils.md5Hex(message.data).toUpperCase(Locale.US);
                 File file = ServerModelManager.CACHE_CLIENT.resolve(fileName).toFile();
@@ -59,5 +58,15 @@ public class SendModelFile implements CustomPacketPayload {
                 }
             }
         });
+    }
+    
+    private static void setClientPassword(byte[] password) {
+        try {
+            Class<?> clientModelManagerClass = Class.forName("moe.byn.minecraftmod.legacyysm.client.ClientModelManager");
+            java.lang.reflect.Field passwordField = clientModelManagerClass.getDeclaredField("PASSWORD");
+            passwordField.set(null, password);
+        } catch (Exception e) {
+            YesSteveModel.LOGGER.error("Failed to set client password", e);
+        }
     }
 }

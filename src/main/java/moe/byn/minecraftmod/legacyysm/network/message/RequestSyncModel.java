@@ -1,7 +1,6 @@
 package moe.byn.minecraftmod.legacyysm.network.message;
 
 import moe.byn.minecraftmod.legacyysm.YesSteveModel;
-import moe.byn.minecraftmod.legacyysm.client.ClientModelManager;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -26,6 +25,14 @@ public class RequestSyncModel implements CustomPacketPayload {
     }
 
     public static void handleClient(RequestSyncModel message, IPayloadContext context) {
-        context.enqueueWork(ClientModelManager::sendSyncModelMessage);
+        context.enqueueWork(() -> {
+            try {
+                Class<?> helperClass = Class.forName("moe.byn.minecraftmod.legacyysm.client.ClientModelSyncHelper");
+                java.lang.reflect.Method method = helperClass.getMethod("sendSyncModelMessage");
+                method.invoke(null);
+            } catch (Exception e) {
+                YesSteveModel.LOGGER.error("Failed to send sync model message", e);
+            }
+        });
     }
 }

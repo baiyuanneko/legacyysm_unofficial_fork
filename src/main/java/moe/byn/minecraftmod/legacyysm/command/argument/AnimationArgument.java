@@ -1,8 +1,5 @@
 package moe.byn.minecraftmod.legacyysm.command.argument;
 
-import moe.byn.minecraftmod.legacyysm.client.model.CustomPlayerModel;
-import moe.byn.minecraftmod.legacyysm.geckolib3.file.AnimationFile;
-import moe.byn.minecraftmod.legacyysm.geckolib3.resource.GeckoLibCache;
 import moe.byn.minecraftmod.legacyysm.util.Keep;
 import com.google.common.collect.Sets;
 import com.mojang.brigadier.StringReader;
@@ -47,18 +44,40 @@ public class AnimationArgument implements ArgumentType<String> {
     public <S> CompletableFuture<Suggestions> listSuggestions(CommandContext<S> source, SuggestionsBuilder builder) {
         if (source.getSource() instanceof SharedSuggestionProvider) {
             if (FMLEnvironment.dist == Dist.DEDICATED_SERVER) {
-                // Fixme: 应该为服务器后台也添加提示功能
                 return Suggestions.empty();
             } else {
-                AnimationFile main = GeckoLibCache.getInstance().getAnimations().get(CustomPlayerModel.DEFAULT_MAIN_ANIMATION);
-                Set<String> animations = Sets.newHashSet();
-                animations.addAll(main.animations().keySet());
+                Set<String> animations = getClientAnimations();
                 animations.add(STOP);
                 return SharedSuggestionProvider.suggest(animations, builder);
             }
         } else {
             return Suggestions.empty();
         }
+    }
+    
+    @SuppressWarnings("unchecked")
+    private static Set<String> getClientAnimations() {
+        Set<String> animations = Sets.newHashSet();
+        try {
+            Class<?> geckoLibCacheClass = Class.forName("moe.byn.minecraftmod.legacyysm.geckolib3.resource.GeckoLibCache");
+            java.lang.reflect.Method getInstanceMethod = geckoLibCacheClass.getMethod("getInstance");
+            Object cacheInstance = getInstanceMethod.invoke(null);
+            java.lang.reflect.Method getAnimationsMethod = geckoLibCacheClass.getMethod("getAnimations");
+            java.util.Map<?, ?> animationsMap = (java.util.Map<?, ?>) getAnimationsMethod.invoke(cacheInstance);
+            
+            Class<?> customPlayerModelClass = Class.forName("moe.byn.minecraftmod.legacyysm.client.model.CustomPlayerModel");
+            java.lang.reflect.Field defaultAnimField = customPlayerModelClass.getField("DEFAULT_MAIN_ANIMATION");
+            Object defaultAnimKey = defaultAnimField.get(null);
+            
+            Object animationFile = animationsMap.get(defaultAnimKey);
+            if (animationFile != null) {
+                java.lang.reflect.Method animationsMethod = animationFile.getClass().getMethod("animations");
+                java.util.Map<String, ?> animMap = (java.util.Map<String, ?>) animationsMethod.invoke(animationFile);
+                animations.addAll(animMap.keySet());
+            }
+        } catch (Exception e) {
+        }
+        return animations;
     }
 
     @Override

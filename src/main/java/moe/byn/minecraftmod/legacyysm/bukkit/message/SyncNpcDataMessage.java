@@ -1,17 +1,13 @@
 package moe.byn.minecraftmod.legacyysm.bukkit.message;
 
-import moe.byn.minecraftmod.legacyysm.bukkit.client.NPCData;
+import moe.byn.minecraftmod.legacyysm.YesSteveModel;
 import com.google.common.collect.Maps;
 import io.netty.buffer.ByteBuf;
 import it.unimi.dsi.fastutil.Pair;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 import java.util.Map;
@@ -56,11 +52,22 @@ public class SyncNpcDataMessage implements CustomPacketPayload {
         context.enqueueWork(() -> handleMessage(message));
     }
 
-    @OnlyIn(Dist.CLIENT)
     private static void handleMessage(SyncNpcDataMessage message) {
-        LocalPlayer localPlayer = Minecraft.getInstance().player;
-        if (localPlayer != null) {
-            NPCData.addAll(message.data);
+        try {
+            Class<?> minecraftClass = Class.forName("net.minecraft.client.Minecraft");
+            java.lang.reflect.Method getInstanceMethod = minecraftClass.getMethod("getInstance");
+            Object mc = getInstanceMethod.invoke(null);
+            
+            java.lang.reflect.Field playerField = minecraftClass.getDeclaredField("player");
+            Object localPlayer = playerField.get(mc);
+            
+            if (localPlayer != null) {
+                Class<?> npcDataClass = Class.forName("moe.byn.minecraftmod.legacyysm.bukkit.client.NPCData");
+                java.lang.reflect.Method addAllMethod = npcDataClass.getMethod("addAll", Map.class);
+                addAllMethod.invoke(null, message.data);
+            }
+        } catch (Exception e) {
+            YesSteveModel.LOGGER.error("Failed to handle SyncNpcDataMessage", e);
         }
     }
 }

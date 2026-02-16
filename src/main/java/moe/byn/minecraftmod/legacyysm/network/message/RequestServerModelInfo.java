@@ -1,9 +1,7 @@
 package moe.byn.minecraftmod.legacyysm.network.message;
 
 import moe.byn.minecraftmod.legacyysm.YesSteveModel;
-import moe.byn.minecraftmod.legacyysm.client.gui.ModelManageScreen;
 import io.netty.buffer.ByteBuf;
-import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -77,8 +75,21 @@ public class RequestServerModelInfo implements CustomPacketPayload {
     }
 
     private static void openGui(RequestServerModelInfo message) {
-        Minecraft mc = Minecraft.getInstance();
-        mc.setScreen(new ModelManageScreen(message.customModels, message.authModels));
+        try {
+            Class<?> minecraftClass = Class.forName("net.minecraft.client.Minecraft");
+            java.lang.reflect.Method getInstanceMethod = minecraftClass.getMethod("getInstance");
+            Object mc = getInstanceMethod.invoke(null);
+            
+            Class<?> modelManageScreenClass = Class.forName("moe.byn.minecraftmod.legacyysm.client.gui.ModelManageScreen");
+            java.lang.reflect.Constructor<?> constructor = modelManageScreenClass.getConstructor(List.class, List.class);
+            Object screen = constructor.newInstance(message.customModels, message.authModels);
+            
+            java.lang.reflect.Method setScreenMethod = minecraftClass.getMethod("setScreen", 
+                Class.forName("net.minecraft.client.gui.screens.Screen"));
+            setScreenMethod.invoke(mc, screen);
+        } catch (Exception e) {
+            YesSteveModel.LOGGER.error("Failed to open ModelManageScreen", e);
+        }
     }
 
     public static class Info {
