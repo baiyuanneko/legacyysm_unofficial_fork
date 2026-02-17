@@ -1,5 +1,6 @@
 package moe.byn.minecraftmod.legacyysm.model.format;
 
+import moe.byn.minecraftmod.legacyysm.YesSteveModel;
 import moe.byn.minecraftmod.legacyysm.data.EncryptTools;
 import moe.byn.minecraftmod.legacyysm.data.ModelData;
 import moe.byn.minecraftmod.legacyysm.geckolib3.geo.raw.pojo.Converter;
@@ -30,19 +31,24 @@ import static moe.byn.minecraftmod.legacyysm.model.ServerModelManager.*;
 public final class ZipFormat {
     public static void cacheAllModels(Path rootPath) {
         Collection<File> zipFiles = FileUtils.listFiles(rootPath.toFile(), new String[]{"zip"}, false);
+        YesSteveModel.LOGGER.info("ZipFormat: Found {} .zip files in {}", zipFiles.size(), rootPath);
         for (File file : zipFiles) {
             String modelId = removeExtension(file.getName());
             if (ResourceLocation.tryParse(modelId) == null) {
+                YesSteveModel.LOGGER.warn("ZipFormat: Skipping invalid modelId: {}", modelId);
                 continue;
             }
             try (ZipFile zipFile = new ZipFile(file)) {
                 if (zipFile.getEntry(MAIN_MODEL_FILE_NAME) == null || isBlankEntry(zipFile, MAIN_MODEL_FILE_NAME)) {
+                    YesSteveModel.LOGGER.warn("ZipFormat: Missing or blank main.json for {}", modelId);
                     continue;
                 }
                 if (zipFile.getEntry(ARM_MODEL_FILE_NAME) == null || isBlankEntry(zipFile, ARM_MODEL_FILE_NAME)) {
+                    YesSteveModel.LOGGER.warn("ZipFormat: Missing or blank arm.json for {}", modelId);
                     continue;
                 }
                 if (zipFile.stream().noneMatch(entry -> entry.getName().endsWith(".png"))) {
+                    YesSteveModel.LOGGER.warn("ZipFormat: No texture found for {}", modelId);
                     continue;
                 }
 
@@ -51,15 +57,17 @@ public final class ZipFormat {
                     if (info != null) {
                         CACHE_NAME_INFO.put(modelId, info);
                         AUTH_MODELS.add(modelId);
+                        YesSteveModel.LOGGER.info("ZipFormat: Cached auth model: {}", modelId);
                     }
                 } else {
                     ServerModelInfo info = cacheModel(zipFile, modelId, false);
                     if (info != null) {
                         CACHE_NAME_INFO.put(modelId, info);
+                        YesSteveModel.LOGGER.info("ZipFormat: Cached model: {}", modelId);
                     }
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                YesSteveModel.LOGGER.error("ZipFormat: Failed to cache model {}", modelId, e);
             }
         }
     }

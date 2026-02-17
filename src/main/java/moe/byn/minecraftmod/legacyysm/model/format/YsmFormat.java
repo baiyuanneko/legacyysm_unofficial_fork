@@ -1,5 +1,6 @@
 package moe.byn.minecraftmod.legacyysm.model.format;
 
+import moe.byn.minecraftmod.legacyysm.YesSteveModel;
 import moe.byn.minecraftmod.legacyysm.data.EncryptTools;
 import moe.byn.minecraftmod.legacyysm.data.ModelData;
 import moe.byn.minecraftmod.legacyysm.geckolib3.geo.raw.pojo.Converter;
@@ -25,23 +26,29 @@ import static moe.byn.minecraftmod.legacyysm.model.ServerModelManager.*;
 public final class YsmFormat {
     public static void cacheAllModels(Path rootPath) {
         Collection<File> ysmFiles = FileUtils.listFiles(rootPath.toFile(), new String[]{"ysm"}, false);
+        YesSteveModel.LOGGER.info("YsmFormat: Found {} .ysm files in {}", ysmFiles.size(), rootPath);
         for (File ysmFile : ysmFiles) {
             String modelId = removeExtension(ysmFile.getName());
             if (ResourceLocation.tryParse(modelId) == null) {
+                YesSteveModel.LOGGER.warn("YsmFormat: Skipping invalid modelId: {}", modelId);
                 continue;
             }
             try {
                 Map<String, byte[]> data = YesModelUtils.input(ysmFile);
                 if (data.isEmpty()) {
+                    YesSteveModel.LOGGER.warn("YsmFormat: Empty data for {}", modelId);
                     continue;
                 }
                 if (!data.containsKey(MAIN_MODEL_FILE_NAME)) {
+                    YesSteveModel.LOGGER.warn("YsmFormat: Missing main.json for {}", modelId);
                     continue;
                 }
                 if (!data.containsKey(ARM_MODEL_FILE_NAME)) {
+                    YesSteveModel.LOGGER.warn("YsmFormat: Missing arm.json for {}", modelId);
                     continue;
                 }
                 if (data.keySet().stream().noneMatch(fileName -> fileName.endsWith(".png"))) {
+                    YesSteveModel.LOGGER.warn("YsmFormat: No texture found for {}", modelId);
                     continue;
                 }
 
@@ -50,15 +57,17 @@ public final class YsmFormat {
                     if (info != null) {
                         CACHE_NAME_INFO.put(modelId, info);
                         AUTH_MODELS.add(modelId);
+                        YesSteveModel.LOGGER.info("YsmFormat: Cached auth model: {}", modelId);
                     }
                 } else {
                     ServerModelInfo info = cacheModel(data, modelId, false);
                     if (info != null) {
                         CACHE_NAME_INFO.put(modelId, info);
+                        YesSteveModel.LOGGER.info("YsmFormat: Cached model: {}", modelId);
                     }
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                YesSteveModel.LOGGER.error("YsmFormat: Failed to cache model {}", modelId, e);
             }
         }
     }

@@ -4,11 +4,13 @@ import moe.byn.minecraftmod.legacyysm.YesSteveModel;
 import moe.byn.minecraftmod.legacyysm.capability.YSMAttachments;
 import moe.byn.minecraftmod.legacyysm.model.ServerModelManager;
 import moe.byn.minecraftmod.legacyysm.model.PlayerModelCache;
+import moe.byn.minecraftmod.legacyysm.network.NetworkHandler;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.players.PlayerList;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 public record SetModelAndTexture(ResourceLocation modelId, ResourceLocation selectTexture) implements CustomPacketPayload {
@@ -55,11 +57,24 @@ public record SetModelAndTexture(ResourceLocation modelId, ResourceLocation sele
                 var modelIdCap = serverPlayer.getData(YSMAttachments.MODEL_INFO);
                 modelIdCap.setModelAndTexture(data.modelId, data.selectTexture);
                 
+                broadcastModelChange(serverPlayer);
+                
                 YesSteveModel.LOGGER.debug("Player {} set model to {}", serverPlayer.getName().getString(), modelPath);
             } else {
                 YesSteveModel.LOGGER.debug("Player {} requested local model {}, waiting for upload", 
                         serverPlayer.getName().getString(), modelPath);
             }
         });
+    }
+    
+    private static void broadcastModelChange(ServerPlayer sourcePlayer) {
+        PlayerList playerList = sourcePlayer.getServer().getPlayerList();
+        SyncModelInfo syncMsg = new SyncModelInfo(sourcePlayer.getId(), sourcePlayer.getData(YSMAttachments.MODEL_INFO));
+        
+        for (ServerPlayer targetPlayer : playerList.getPlayers()) {
+            if (targetPlayer != sourcePlayer) {
+                NetworkHandler.sendToClientPlayer(syncMsg, targetPlayer);
+            }
+        }
     }
 }

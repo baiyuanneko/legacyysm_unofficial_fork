@@ -3,7 +3,7 @@ package moe.byn.minecraftmod.legacyysm.network.message;
 import moe.byn.minecraftmod.legacyysm.YesSteveModel;
 import moe.byn.minecraftmod.legacyysm.config.ServerConfig;
 import moe.byn.minecraftmod.legacyysm.model.PlayerModelCache;
-import moe.byn.minecraftmod.legacyysm.network.NetworkHandler;
+import moe.byn.minecraftmod.legacyysm.util.ModelIdValidator;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -57,21 +57,35 @@ public class UploadPlayerModel implements CustomPacketPayload {
 
     public static void handleServer(UploadPlayerModel message, IPayloadContext context) {
         context.enqueueWork(() -> {
-            if (context.player() instanceof ServerPlayer serverPlayer) {
-                int maxSize = ServerConfig.MAX_MODEL_SIZE_BYTES.get();
-                if (message.modelData.length > maxSize) {
-                    YesSteveModel.LOGGER.warn("Player {} tried to upload model {} that exceeds size limit ({} > {})",
-                            serverPlayer.getName().getString(), message.modelId, message.modelData.length, maxSize);
-                    return;
-                }
+            if (!(context.player() instanceof ServerPlayer serverPlayer)) {
+                return;
+            }
+            
+            if (!ServerConfig.ALLOW_MODEL_SYNC.get()) {
+                YesSteveModel.LOGGER.warn("Player {} tried to upload model {} but client upload is disabled (allowModelSync=false)", 
+                        serverPlayer.getName().getString(), message.modelId);
+                return;
+            }
+            
+            if (!ModelIdValidator.isValidModelId(message.modelId)) {
+                YesSteveModel.LOGGER.warn("Player {} tried to upload model with invalid modelId: {}", 
+                        serverPlayer.getName().getString(), message.modelId);
+                return;
+            }
+            
+            int maxSize = ServerConfig.MAX_MODEL_SIZE_BYTES.get();
+            if (message.modelData.length > maxSize) {
+                YesSteveModel.LOGGER.warn("Player {} tried to upload model {} that exceeds size limit ({} > {})",
+                        serverPlayer.getName().getString(), message.modelId, message.modelData.length, maxSize);
+                return;
+            }
 
-                boolean success = PlayerModelCache.cachePlayerModel(serverPlayer, message.modelId, message.modelData);
-                if (success) {
-                    YesSteveModel.LOGGER.info("Player {} uploaded model {} ({} bytes)",
-                            serverPlayer.getName().getString(), message.modelId, message.modelData.length);
-                    
-                    PlayerModelCache.broadcastPlayerModel(serverPlayer, message.modelId, message.modelData);
-                }
+            boolean success = PlayerModelCache.cachePlayerModel(serverPlayer, message.modelId, message.modelData);
+            if (success) {
+                YesSteveModel.LOGGER.info("Player {} uploaded model {} ({} bytes)",
+                        serverPlayer.getName().getString(), message.modelId, message.modelData.length);
+                
+                PlayerModelCache.broadcastPlayerModel(serverPlayer, message.modelId, message.modelData);
             }
         });
     }

@@ -4,6 +4,7 @@ import moe.byn.minecraftmod.legacyysm.YesSteveModel;
 import moe.byn.minecraftmod.legacyysm.config.ServerConfig;
 import moe.byn.minecraftmod.legacyysm.network.NetworkHandler;
 import moe.byn.minecraftmod.legacyysm.network.message.SyncPlayerModel;
+import moe.byn.minecraftmod.legacyysm.util.ModelIdValidator;
 import com.google.common.collect.Maps;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.players.PlayerList;
@@ -42,23 +43,40 @@ public final class PlayerModelCache {
     public static boolean cachePlayerModel(ServerPlayer player, String modelId, byte[] modelData) {
         init();
         
+        if (!ModelIdValidator.isValidModelId(modelId)) {
+            YesSteveModel.LOGGER.warn("Player {} tried to cache model with invalid modelId: {}", 
+                    player.getName().getString(), modelId);
+            return false;
+        }
+        
         int maxCachedModels = ServerConfig.MAX_CACHED_MODELS.get();
-        int maxModelsPerPlayer = ServerConfig.MAX_MODELS_PER_PLAYER.get();
         
         String oldModelId = PLAYER_MODELS.put(player.getUUID(), modelId);
         if (oldModelId != null && !oldModelId.equals(modelId)) {
-            removeFromCache(oldModelId);
+            removeFromCache(player.getUUID(), oldModelId);
         }
         
         while (MODEL_CACHE.size() >= maxCachedModels) {
             String oldestKey = MODEL_CACHE.keySet().iterator().next();
-            removeFromCache(oldestKey);
+            CachedModelInfo info = MODEL_CACHE.get(oldestKey);
+            if (info != null) {
+                removeFromCache(info.ownerUuid, info.modelId);
+            }
             YesSteveModel.LOGGER.info("Removed oldest cached model: {} (cache full)", oldestKey);
         }
         
         String cacheKey = generateCacheKey(player.getUUID(), modelId);
         try {
             File cacheFile = PLAYER_MODEL_CACHE.resolve(cacheKey).toFile();
+            
+            Path canonicalCacheDir = PLAYER_MODEL_CACHE.toRealPath();
+            Path canonicalTargetFile = cacheFile.getCanonicalFile().toPath();
+            if (!canonicalTargetFile.startsWith(canonicalCacheDir)) {
+                YesSteveModel.LOGGER.warn("Path traversal attempt detected from player {} with modelId: {}", 
+                        player.getName().getString(), modelId);
+                return false;
+            }
+            
             FileUtils.writeByteArrayToFile(cacheFile, modelData);
             
             MODEL_CACHE.put(cacheKey, new CachedModelInfo(player.getUUID(), modelId, System.currentTimeMillis()));
@@ -70,7 +88,8 @@ public final class PlayerModelCache {
         }
     }
 
-    private static void removeFromCache(String cacheKey) {
+    private static void removeFromCache(UUID playerUuid, String modelId) {
+        String cacheKey = generateCacheKey(playerUuid, modelId);
         MODEL_CACHE.remove(cacheKey);
         try {
             File cacheFile = PLAYER_MODEL_CACHE.resolve(cacheKey).toFile();

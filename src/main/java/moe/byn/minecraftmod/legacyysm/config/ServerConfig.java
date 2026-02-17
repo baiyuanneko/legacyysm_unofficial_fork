@@ -5,6 +5,7 @@ import net.neoforged.neoforge.common.ModConfigSpec;
 public class ServerConfig {
     public static ModConfigSpec CONFIG_SPEC;
     
+    public static ModConfigSpec.BooleanValue ALLOW_MODEL_SYNC;
     public static ModConfigSpec.IntValue MAX_CACHED_MODELS;
     public static ModConfigSpec.IntValue MAX_MODELS_PER_PLAYER;
     public static ModConfigSpec.IntValue MAX_MODEL_SIZE_BYTES;
@@ -13,6 +14,11 @@ public class ServerConfig {
         ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
         
         builder.push("model_sync");
+        
+        builder.comment("Allow clients to upload and sync their local models to the server.",
+                "When true (default): clients can upload models, server caches and distributes them.",
+                "When false: only server-to-client model distribution is allowed, clients cannot upload models.");
+        ALLOW_MODEL_SYNC = builder.define("allowModelSync", true);
         
         builder.comment("Maximum number of different player models the server will cache.",
                 "When this limit is reached, the oldest cached model will be removed.");
