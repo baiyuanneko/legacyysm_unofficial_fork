@@ -2,44 +2,17 @@ package moe.byn.minecraftmod.legacyysm.config;
 
 import net.neoforged.neoforge.common.ModConfigSpec;
 
-/**
- * 服务端专用配置
- * 这些配置只会在服务端生效，客户端会忽略
- */
 public class ServerConfig {
     public static ModConfigSpec CONFIG_SPEC;
     
-    /**
-     * 是否允许模型互相同步
-     * 开启后，客户端可以选择本地模型，服务端会缓存并分发给其他玩家
-     */
-    public static ModConfigSpec.BooleanValue ALLOW_MODEL_SYNC;
-    
-    /**
-     * 服务端最多缓存的玩家模型数量
-     */
     public static ModConfigSpec.IntValue MAX_CACHED_MODELS;
-    
-    /**
-     * 每个玩家最多缓存的模型数量
-     */
     public static ModConfigSpec.IntValue MAX_MODELS_PER_PLAYER;
-    
-    /**
-     * 单个模型最大大小（字节），默认50MB
-     */
     public static ModConfigSpec.IntValue MAX_MODEL_SIZE_BYTES;
     
     public static ModConfigSpec init() {
         ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
         
         builder.push("model_sync");
-        
-        builder.comment("Allow client models to sync between players.",
-                "When enabled, clients can select their local models,",
-                "and the server will cache and distribute them to other players.",
-                "When disabled, only server-side models are available (original behavior).");
-        ALLOW_MODEL_SYNC = builder.define("allowModelSync", false);
         
         builder.comment("Maximum number of different player models the server will cache.",
                 "When this limit is reached, the oldest cached model will be removed.");

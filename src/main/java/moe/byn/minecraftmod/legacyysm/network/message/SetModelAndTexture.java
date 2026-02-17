@@ -2,7 +2,6 @@ package moe.byn.minecraftmod.legacyysm.network.message;
 
 import moe.byn.minecraftmod.legacyysm.YesSteveModel;
 import moe.byn.minecraftmod.legacyysm.capability.YSMAttachments;
-import moe.byn.minecraftmod.legacyysm.config.ServerConfig;
 import moe.byn.minecraftmod.legacyysm.model.ServerModelManager;
 import moe.byn.minecraftmod.legacyysm.model.PlayerModelCache;
 import io.netty.buffer.ByteBuf;
@@ -57,11 +56,8 @@ public record SetModelAndTexture(ResourceLocation modelId, ResourceLocation sele
                 modelIdCap.setModelAndTexture(data.modelId, data.selectTexture);
                 
                 YesSteveModel.LOGGER.debug("Player {} set model to {}", serverPlayer.getName().getString(), modelPath);
-            } else if (ServerConfig.ALLOW_MODEL_SYNC.get()) {
-                YesSteveModel.LOGGER.debug("Player {} requested local model {}, waiting for upload", 
-                        serverPlayer.getName().getString(), modelPath);
             } else {
-                YesSteveModel.LOGGER.warn("Player {} tried to use unknown model {} and model sync is disabled",
+                YesSteveModel.LOGGER.debug("Player {} requested local model {}, waiting for upload", 
                         serverPlayer.getName().getString(), modelPath);
             }
         });

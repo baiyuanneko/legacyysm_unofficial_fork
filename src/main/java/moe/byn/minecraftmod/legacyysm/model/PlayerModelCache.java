@@ -119,9 +119,6 @@ public final class PlayerModelCache {
     }
 
     public static void sendCachedModelsToPlayer(ServerPlayer target, PlayerList playerList) {
-        if (!ServerConfig.ALLOW_MODEL_SYNC.get()) {
-            return;
-        }
         init();
         
         for (ServerPlayer otherPlayer : playerList.getPlayers()) {

@@ -57,12 +57,6 @@ public class UploadPlayerModel implements CustomPacketPayload {
 
     public static void handleServer(UploadPlayerModel message, IPayloadContext context) {
         context.enqueueWork(() -> {
-            if (!ServerConfig.ALLOW_MODEL_SYNC.get()) {
-                YesSteveModel.LOGGER.warn("Player {} tried to upload model but model sync is disabled", 
-                        context.player().getName().getString());
-                return;
-            }
-
             if (context.player() instanceof ServerPlayer serverPlayer) {
                 int maxSize = ServerConfig.MAX_MODEL_SIZE_BYTES.get();
                 if (message.modelData.length > maxSize) {

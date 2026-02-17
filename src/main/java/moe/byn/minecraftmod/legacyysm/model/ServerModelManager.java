@@ -72,9 +72,8 @@ public final class ServerModelManager {
     public static final String EXTRA_ANIMATION_FILE_NAME = "extra.animation.json";
 
     public static void sendRequestSyncModelMessage(PlayerList playerList) {
-        boolean allowModelSync = ServerConfig.ALLOW_MODEL_SYNC.get();
         for (ServerPlayer player : playerList.getPlayers()) {
-            NetworkHandler.sendToClientPlayer(new RequestSyncModel(allowModelSync), player);
+            NetworkHandler.sendToClientPlayer(new RequestSyncModel(true), player);
         }
     }
 
@@ -85,8 +84,7 @@ public final class ServerModelManager {
     }
 
     public static void sendRequestSyncModelMessage(Player player) {
-        boolean allowModelSync = ServerConfig.ALLOW_MODEL_SYNC.get();
-        NetworkHandler.sendToClientPlayer(new RequestSyncModel(allowModelSync), player);
+        NetworkHandler.sendToClientPlayer(new RequestSyncModel(true), player);
     }
 
     public static void reloadPacks() {
