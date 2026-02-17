@@ -58,14 +58,33 @@ public class PlayerModelScreen extends Screen {
 
     private void calculateModelList() {
         models = Maps.newHashMap();
+        YesSteveModel.LOGGER.info("PlayerModelScreen.calculateModelList: SERVER_ALLOWS_MODEL_SYNC={}, MODELS.size={}, LOCAL_MODELS.size={}", 
+                ClientModelManager.SERVER_ALLOWS_MODEL_SYNC, 
+                ClientModelManager.MODELS.size(), 
+                ClientModelManager.LOCAL_MODELS.size());
+        
         if (this.category == Category.ALL) {
             this.models.putAll(ClientModelManager.MODELS);
+            YesSteveModel.LOGGER.info("After MODELS.putAll: models.size={}", models.size());
+            
+            if (ClientModelManager.SERVER_ALLOWS_MODEL_SYNC) {
+                YesSteveModel.LOGGER.info("LOCAL_MODELS keys: {}", ClientModelManager.LOCAL_MODELS.keySet());
+                this.models.putAll(ClientModelManager.LOCAL_MODELS);
+                YesSteveModel.LOGGER.info("After LOCAL_MODELS.putAll: models.size={}", models.size());
+            }
         }
         if (this.category == Category.AUTH) {
             var cap = this.player.getData(YSMAttachments.AUTH_MODELS);
             for (ResourceLocation modelId : ClientModelManager.MODELS.keySet()) {
                 if (cap.containModel(modelId) || !ClientModelManager.AUTH_MODELS.contains(modelId.getPath())) {
                     this.models.put(modelId, ClientModelManager.MODELS.get(modelId));
+                }
+            }
+            if (ClientModelManager.SERVER_ALLOWS_MODEL_SYNC) {
+                for (ResourceLocation modelId : ClientModelManager.LOCAL_MODELS.keySet()) {
+                    if (cap.containModel(modelId) || !ClientModelManager.AUTH_MODELS.contains(modelId.getPath())) {
+                        this.models.put(modelId, ClientModelManager.LOCAL_MODELS.get(modelId));
+                    }
                 }
             }
         }
@@ -76,8 +95,18 @@ public class PlayerModelScreen extends Screen {
                     this.models.put(modelId, ClientModelManager.MODELS.get(modelId));
                 }
             }
+            if (ClientModelManager.SERVER_ALLOWS_MODEL_SYNC) {
+                for (ResourceLocation modelId : ClientModelManager.LOCAL_MODELS.keySet()) {
+                    if (cap.containModel(modelId)) {
+                        this.models.put(modelId, ClientModelManager.LOCAL_MODELS.get(modelId));
+                    }
+                }
+            }
         }
 
+        YesSteveModel.LOGGER.info("PlayerModelScreen.calculateModelList: final models.size={}, modelOrderList.size={}", 
+                models.size(), models.isEmpty() ? 0 : models.keySet().size());
+        
         if (textField != null) {
             String search = this.textField.getValue().toLowerCase(Locale.US);
             models.entrySet().removeIf(next -> !next.getKey().getPath().contains(search));

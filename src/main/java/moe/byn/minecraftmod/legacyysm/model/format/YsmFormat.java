@@ -77,7 +77,7 @@ public final class YsmFormat {
     }
 
     @NotNull
-    private static ModelData getModelData(Map<String, byte[]> data, String modelId, boolean isAuth) throws IOException {
+    public static ModelData getModelData(Map<String, byte[]> data, String modelId, boolean isAuth) throws IOException {
         Map<String, byte[]> model = Maps.newHashMap();
         model.put("main", getBytes(data, MAIN_MODEL_FILE_NAME));
         model.put("arm", getBytes(data, ARM_MODEL_FILE_NAME));

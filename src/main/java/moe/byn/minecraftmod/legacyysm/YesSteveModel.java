@@ -2,6 +2,7 @@ package moe.byn.minecraftmod.legacyysm;
 
 import moe.byn.minecraftmod.legacyysm.capability.YSMAttachments;
 import moe.byn.minecraftmod.legacyysm.config.GeneralConfig;
+import moe.byn.minecraftmod.legacyysm.config.ServerConfig;
 import moe.byn.minecraftmod.legacyysm.event.CommandRegistry;
 import moe.byn.minecraftmod.legacyysm.model.ServerModelManager;
 import com.google.gson.Gson;
@@ -21,6 +22,7 @@ public class YesSteveModel {
 
     public YesSteveModel(IEventBus modEventBus, ModContainer modContainer) {
         modContainer.registerConfig(ModConfig.Type.COMMON, GeneralConfig.init());
+        modContainer.registerConfig(ModConfig.Type.SERVER, ServerConfig.init());
         ServerModelManager.reloadPacks();
         CommandRegistry.COMMAND_ARGUMENT_TYPES.register(modEventBus);
         YSMAttachments.ATTACHMENTS.register(modEventBus);

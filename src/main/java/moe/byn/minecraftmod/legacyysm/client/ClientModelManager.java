@@ -60,6 +60,11 @@ public class ClientModelManager {
     public static List<String> CACHE_MD5 = Lists.newArrayList();
     public static List<String> AUTH_MODELS = Lists.newArrayList();
     public static byte[] PASSWORD;
+    
+    public static volatile boolean SERVER_ALLOWS_MODEL_SYNC = false;
+    public static Map<ResourceLocation, List<ResourceLocation>> LOCAL_MODELS = Maps.newLinkedHashMap();
+    
+    private static volatile boolean localModelsLoaded = false;
 
     public static void registerAll(ModelData data) {
         ResourceLocation modelId = ResourceLocation.fromNamespaceAndPath(YesSteveModel.MOD_ID, data.getModelId());
@@ -173,16 +178,172 @@ public class ClientModelManager {
         } catch (IOException e) {
             YesSteveModel.LOGGER.error("Failed to load default model", e);
         }
+        
+        loadLocalModels();
+    }
+    
+    public static void loadLocalModels() {
+        if (localModelsLoaded) return;
+        localModelsLoaded = true;
+        
+        YesSteveModel.LOGGER.info("Loading local models from CUSTOM folder...");
+        try {
+            File customDir = ServerModelManager.CUSTOM.toFile();
+            YesSteveModel.LOGGER.info("CUSTOM directory: {}, exists: {}, isDirectory: {}", 
+                    customDir.getAbsolutePath(), customDir.exists(), customDir.isDirectory());
+            
+            if (customDir.exists() && customDir.isDirectory()) {
+                File[] modelDirs = customDir.listFiles(File::isDirectory);
+                if (modelDirs != null) {
+                    YesSteveModel.LOGGER.info("Found {} subdirectories in CUSTOM", modelDirs.length);
+                    
+                    for (File modelDir : modelDirs) {
+                        String modelId = modelDir.getName();
+                        ResourceLocation modelLoc = ResourceLocation.fromNamespaceAndPath(YesSteveModel.MOD_ID, modelId);
+                        
+                        if (MODELS.containsKey(modelLoc)) {
+                            YesSteveModel.LOGGER.info("Model {} already in MODELS (server synced), adding to LOCAL_MODELS anyway for upload", modelId);
+                            LOCAL_MODELS.put(modelLoc, MODELS.get(modelLoc));
+                            continue;
+                        }
+                        
+                        if (LOCAL_MODELS.containsKey(modelLoc)) {
+                            YesSteveModel.LOGGER.debug("Model {} already in LOCAL_MODELS, skipping", modelId);
+                            continue;
+                        }
+                        
+                        try {
+                            ModelData data = FolderFormat.getModelData(ServerModelManager.CUSTOM, modelId, false);
+                            
+                            registerGeo(modelLoc, data.getModel());
+                            registerAnimations(ModelIdUtil.getMainId(modelLoc), data.getAnimation());
+                            
+                            for (Map.Entry<String, byte[]> entry : data.getTexture().entrySet()) {
+                                ResourceLocation textureId = ModelIdUtil.getSubModelId(modelLoc, entry.getKey());
+                                registerTexture(textureId, entry.getValue());
+                            }
+                            
+                            List<ResourceLocation> textures = Lists.newArrayList();
+                            for (String texName : data.getTexture().keySet()) {
+                                textures.add(ModelIdUtil.getSubModelId(modelLoc, texName));
+                            }
+                            LOCAL_MODELS.put(modelLoc, textures);
+                            
+                            YesSteveModel.LOGGER.info("Loaded local model (folder): {} with {} textures", modelId, textures.size());
+                        } catch (Exception e) {
+                            YesSteveModel.LOGGER.warn("Failed to load local model: {}", modelId, e);
+                        }
+                    }
+                }
+                
+                java.util.Collection<File> ysmFiles = org.apache.commons.io.FileUtils.listFiles(customDir, new String[]{"ysm"}, false);
+                YesSteveModel.LOGGER.info("Found {} .ysm files in CUSTOM", ysmFiles.size());
+                for (File ysmFile : ysmFiles) {
+                    String modelId = ServerModelManager.removeExtension(ysmFile.getName());
+                    ResourceLocation modelLoc = ResourceLocation.fromNamespaceAndPath(YesSteveModel.MOD_ID, modelId);
+                    
+                    if (MODELS.containsKey(modelLoc)) {
+                        YesSteveModel.LOGGER.info("Model {} already in MODELS (server synced), adding to LOCAL_MODELS anyway", modelId);
+                        LOCAL_MODELS.put(modelLoc, MODELS.get(modelLoc));
+                        continue;
+                    }
+                    
+                    if (LOCAL_MODELS.containsKey(modelLoc)) {
+                        continue;
+                    }
+                    
+                    try {
+                        Map<String, byte[]> rawData = moe.byn.minecraftmod.legacyysm.util.YesModelUtils.input(ysmFile);
+                        if (!rawData.isEmpty() && rawData.containsKey("main.json") && rawData.containsKey("arm.json")) {
+                            ModelData data = moe.byn.minecraftmod.legacyysm.model.format.YsmFormat.getModelData(rawData, modelId, false);
+                            
+                            registerGeo(modelLoc, data.getModel());
+                            registerAnimations(ModelIdUtil.getMainId(modelLoc), data.getAnimation());
+                            
+                            for (Map.Entry<String, byte[]> entry : data.getTexture().entrySet()) {
+                                ResourceLocation textureId = ModelIdUtil.getSubModelId(modelLoc, entry.getKey());
+                                registerTexture(textureId, entry.getValue());
+                            }
+                            
+                            List<ResourceLocation> textures = Lists.newArrayList();
+                            for (String texName : data.getTexture().keySet()) {
+                                textures.add(ModelIdUtil.getSubModelId(modelLoc, texName));
+                            }
+                            LOCAL_MODELS.put(modelLoc, textures);
+                            
+                            YesSteveModel.LOGGER.info("Loaded local model (.ysm): {} with {} textures", modelId, textures.size());
+                        }
+                    } catch (Exception e) {
+                        YesSteveModel.LOGGER.warn("Failed to load .ysm model: {}", modelId, e);
+                    }
+                }
+                
+                java.util.Collection<File> zipFiles = org.apache.commons.io.FileUtils.listFiles(customDir, new String[]{"zip"}, false);
+                YesSteveModel.LOGGER.info("Found {} .zip files in CUSTOM", zipFiles.size());
+                for (File zipFile : zipFiles) {
+                    String modelId = ServerModelManager.removeExtension(zipFile.getName());
+                    ResourceLocation modelLoc = ResourceLocation.fromNamespaceAndPath(YesSteveModel.MOD_ID, modelId);
+                    
+                    if (MODELS.containsKey(modelLoc)) {
+                        YesSteveModel.LOGGER.info("Model {} already in MODELS (server synced), adding to LOCAL_MODELS anyway", modelId);
+                        LOCAL_MODELS.put(modelLoc, MODELS.get(modelLoc));
+                        continue;
+                    }
+                    
+                    if (LOCAL_MODELS.containsKey(modelLoc)) {
+                        continue;
+                    }
+                    
+                    try (java.util.zip.ZipFile zf = new java.util.zip.ZipFile(zipFile)) {
+                        if (zf.getEntry("main.json") != null && zf.getEntry("arm.json") != null) {
+                            ModelData data = moe.byn.minecraftmod.legacyysm.model.format.ZipFormat.getModelData(zf, modelId, false);
+                            
+                            registerGeo(modelLoc, data.getModel());
+                            registerAnimations(ModelIdUtil.getMainId(modelLoc), data.getAnimation());
+                            
+                            for (Map.Entry<String, byte[]> entry : data.getTexture().entrySet()) {
+                                ResourceLocation textureId = ModelIdUtil.getSubModelId(modelLoc, entry.getKey());
+                                registerTexture(textureId, entry.getValue());
+                            }
+                            
+                            List<ResourceLocation> textures = Lists.newArrayList();
+                            for (String texName : data.getTexture().keySet()) {
+                                textures.add(ModelIdUtil.getSubModelId(modelLoc, texName));
+                            }
+                            LOCAL_MODELS.put(modelLoc, textures);
+                            
+                            YesSteveModel.LOGGER.info("Loaded local model (.zip): {} with {} textures", modelId, textures.size());
+                        }
+                    } catch (Exception e) {
+                        YesSteveModel.LOGGER.warn("Failed to load .zip model: {}", modelId, e);
+                    }
+                }
+            }
+            YesSteveModel.LOGGER.info("LOCAL_MODELS now contains {} models", LOCAL_MODELS.size());
+        } catch (Exception e) {
+            YesSteveModel.LOGGER.error("Error loading local models", e);
+        }
+    }
+    
+    public static void reloadLocalModels() {
+        localModelsLoaded = false;
+        LOCAL_MODELS.clear();
+        loadLocalModels();
     }
 
     public static void sendSyncModelMessage() {
-        MODELS.clear();
+        if (!SERVER_ALLOWS_MODEL_SYNC) {
+            MODELS.clear();
+            SCALE_INFO.clear();
+            EXTRA_INFO.clear();
+            EXTRA_ANIMATION_NAME.clear();
+            ConditionManager.clear();
+        } else {
+            reloadLocalModels();
+        }
         CACHE_MD5.clear();
         AUTH_MODELS.clear();
-        SCALE_INFO.clear();
-        EXTRA_INFO.clear();
-        EXTRA_ANIMATION_NAME.clear();
-        ConditionManager.clear();
+        
         String[] md5Info = getMd5Info();
         SyncModelFiles syncModelFiles = new SyncModelFiles(md5Info);
         ThreadTools.THREAD_POOL.submit(() -> {
@@ -230,5 +391,128 @@ public class ClientModelManager {
             component.add(Component.translatable("gui.legacyysm_byn.model.license", extraInfo.getLicense()));
         }
         return component;
+    }
+    
+    public static void loadModelFromServer(String modelId, byte[] modelData) {
+        YesSteveModel.LOGGER.info("Loading model from server: {} ({} bytes)", modelId, modelData.length);
+        
+        Minecraft.getInstance().execute(() -> {
+            try {
+                ModelData data = deserializeModelData(modelId, modelData);
+                
+                if (data == null) {
+                    YesSteveModel.LOGGER.error("Failed to deserialize model data for {}", modelId);
+                    return;
+                }
+                
+                registerAll(data);
+                YesSteveModel.LOGGER.info("Successfully loaded model from server: {}", modelId);
+            } catch (Exception e) {
+                YesSteveModel.LOGGER.error("Error loading model from server: " + modelId, e);
+            }
+        });
+    }
+    
+    private static ModelData deserializeModelData(String modelId, byte[] data) {
+        try {
+            java.io.ByteArrayInputStream bais = new java.io.ByteArrayInputStream(data);
+            java.io.ObjectInputStream ois = new java.io.ObjectInputStream(bais);
+            
+            String readModelId = ois.readUTF();
+            boolean isAuth = ois.readBoolean();
+            
+            Map<String, byte[]> model = readStringMap(ois);
+            Map<String, byte[]> texture = readStringMap(ois);
+            Map<String, byte[]> animation = readStringMap(ois);
+            
+            return new ModelData(readModelId, isAuth, moe.byn.minecraftmod.legacyysm.model.format.Type.UNKNOWN, model, texture, animation);
+        } catch (Exception e) {
+            YesSteveModel.LOGGER.error("Failed to deserialize model data", e);
+            return null;
+        }
+    }
+    
+    private static Map<String, byte[]> readStringMap(java.io.ObjectInputStream ois) throws java.io.IOException {
+        Map<String, byte[]> map = Maps.newHashMap();
+        int size = ois.readInt();
+        for (int i = 0; i < size; i++) {
+            String key = ois.readUTF();
+            int len = ois.readInt();
+            byte[] value = new byte[len];
+            ois.readFully(value);
+            map.put(key, value);
+        }
+        return map;
+    }
+    
+    public static byte[] getLocalModelData(String modelId) {
+        try {
+            File customDir = ServerModelManager.CUSTOM.toFile();
+            YesSteveModel.LOGGER.info("getLocalModelData: searching for model {} in {}", modelId, customDir.getAbsolutePath());
+            
+            ModelData data = null;
+            
+            File folderModel = new File(customDir, modelId);
+            if (folderModel.isDirectory()) {
+                YesSteveModel.LOGGER.info("getLocalModelData: found folder format for {}", modelId);
+                data = FolderFormat.getModelData(ServerModelManager.CUSTOM, modelId, false);
+            }
+            
+            if (data == null) {
+                File ysmFile = new File(customDir, modelId + ".ysm");
+                if (ysmFile.isFile()) {
+                    YesSteveModel.LOGGER.info("getLocalModelData: found .ysm format for {} at {}", modelId, ysmFile.getAbsolutePath());
+                    Map<String, byte[]> rawData = moe.byn.minecraftmod.legacyysm.util.YesModelUtils.input(ysmFile);
+                    if (!rawData.isEmpty()) {
+                        data = moe.byn.minecraftmod.legacyysm.model.format.YsmFormat.getModelData(rawData, modelId, false);
+                    }
+                }
+            }
+            
+            if (data == null) {
+                File zipFile = new File(customDir, modelId + ".zip");
+                if (zipFile.isFile()) {
+                    YesSteveModel.LOGGER.info("getLocalModelData: found .zip format for {} at {}", modelId, zipFile.getAbsolutePath());
+                    try (java.util.zip.ZipFile zf = new java.util.zip.ZipFile(zipFile)) {
+                        data = moe.byn.minecraftmod.legacyysm.model.format.ZipFormat.getModelData(zf, modelId, false);
+                    }
+                }
+            }
+            
+            if (data != null) {
+                return serializeModelData(data);
+            }
+            
+            YesSteveModel.LOGGER.error("Model not found: {} (searched folder, .ysm, .zip)", modelId);
+            return null;
+        } catch (Exception e) {
+            YesSteveModel.LOGGER.error("Failed to get local model data for: " + modelId, e);
+            return null;
+        }
+    }
+    
+    private static byte[] serializeModelData(ModelData data) throws java.io.IOException {
+        java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+        java.io.ObjectOutputStream oos = new java.io.ObjectOutputStream(baos);
+        
+        oos.writeUTF(data.getModelId());
+        oos.writeBoolean(data.isAuth());
+        
+        writeStringMap(oos, data.getModel());
+        writeStringMap(oos, data.getTexture());
+        writeStringMap(oos, data.getAnimation());
+        
+        oos.flush();
+        return baos.toByteArray();
+    }
+    
+    private static void writeStringMap(java.io.ObjectOutputStream oos, Map<String, byte[]> map) throws java.io.IOException {
+        oos.writeInt(map.size());
+        for (Map.Entry<String, byte[]> entry : map.entrySet()) {
+            oos.writeUTF(entry.getKey());
+            byte[] value = entry.getValue();
+            oos.writeInt(value.length);
+            oos.write(value);
+        }
     }
 }

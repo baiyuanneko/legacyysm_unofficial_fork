@@ -1,6 +1,7 @@
 package moe.byn.minecraftmod.legacyysm.model;
 
 import moe.byn.minecraftmod.legacyysm.YesSteveModel;
+import moe.byn.minecraftmod.legacyysm.config.ServerConfig;
 import moe.byn.minecraftmod.legacyysm.data.EncryptTools;
 import moe.byn.minecraftmod.legacyysm.model.format.FolderFormat;
 import moe.byn.minecraftmod.legacyysm.model.format.ServerModelInfo;
@@ -71,8 +72,9 @@ public final class ServerModelManager {
     public static final String EXTRA_ANIMATION_FILE_NAME = "extra.animation.json";
 
     public static void sendRequestSyncModelMessage(PlayerList playerList) {
+        boolean allowModelSync = ServerConfig.ALLOW_MODEL_SYNC.get();
         for (ServerPlayer player : playerList.getPlayers()) {
-            NetworkHandler.sendToClientPlayer(RequestSyncModel.INSTANCE, player);
+            NetworkHandler.sendToClientPlayer(new RequestSyncModel(allowModelSync), player);
         }
     }
 
@@ -83,7 +85,8 @@ public final class ServerModelManager {
     }
 
     public static void sendRequestSyncModelMessage(Player player) {
-        NetworkHandler.sendToClientPlayer(RequestSyncModel.INSTANCE, player);
+        boolean allowModelSync = ServerConfig.ALLOW_MODEL_SYNC.get();
+        NetworkHandler.sendToClientPlayer(new RequestSyncModel(allowModelSync), player);
     }
 
     public static void reloadPacks() {

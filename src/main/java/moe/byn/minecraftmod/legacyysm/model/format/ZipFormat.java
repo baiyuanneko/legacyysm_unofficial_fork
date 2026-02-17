@@ -78,7 +78,7 @@ public final class ZipFormat {
     }
 
     @NotNull
-    private static ModelData getModelData(ZipFile zipFile, String modelId, boolean isAuth) throws IOException {
+    public static ModelData getModelData(ZipFile zipFile, String modelId, boolean isAuth) throws IOException {
         Map<String, byte[]> model = Maps.newHashMap();
         model.put("main", getBytes(zipFile, MAIN_MODEL_FILE_NAME));
         model.put("arm", getBytes(zipFile, ARM_MODEL_FILE_NAME));

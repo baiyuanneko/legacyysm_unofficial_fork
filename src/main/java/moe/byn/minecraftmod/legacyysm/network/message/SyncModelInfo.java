@@ -15,6 +15,10 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+
 public class SyncModelInfo implements CustomPacketPayload {
     public static final CustomPacketPayload.Type<SyncModelInfo> TYPE = 
             new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(YesSteveModel.MOD_ID, "sync_model_info"));
@@ -41,6 +45,8 @@ public class SyncModelInfo implements CustomPacketPayload {
 
     private final int entityId;
     private final ModelInfoCapability capability;
+    
+    private static final Map<UUID, ModelInfoCapability> PENDING_MODEL_INFOS = new ConcurrentHashMap<>();
 
     public SyncModelInfo(int entityId, ModelInfoCapability capability) {
         this.entityId = entityId;
@@ -74,12 +80,74 @@ public class SyncModelInfo implements CustomPacketPayload {
                     time++;
                 }
                 if (entity instanceof Player player) {
-                    player.getData(YSMAttachments.MODEL_INFO).copyFrom(message.capability);
+                    ResourceLocation modelId = message.capability.getModelId();
+                    boolean modelAvailable = isModelAvailable(modelId);
+                    
+                    if (modelAvailable) {
+                        player.getData(YSMAttachments.MODEL_INFO).copyFrom(message.capability);
+                    } else if (isServerAllowModelSync()) {
+                        PENDING_MODEL_INFOS.put(player.getUUID(), message.capability);
+                        YesSteveModel.LOGGER.debug("Deferring model update for player {} - model {} not yet available", 
+                                player.getName().getString(), modelId);
+                    } else {
+                        player.getData(YSMAttachments.MODEL_INFO).copyFrom(message.capability);
+                    }
                 }
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
         });
+    }
+    
+    private static boolean isModelAvailable(ResourceLocation modelId) {
+        try {
+            Class<?> clientModelManagerClass = Class.forName("moe.byn.minecraftmod.legacyysm.client.ClientModelManager");
+            java.lang.reflect.Field modelsField = clientModelManagerClass.getDeclaredField("MODELS");
+            @SuppressWarnings("unchecked")
+            Map<ResourceLocation, ?> models = (Map<ResourceLocation, ?>) modelsField.get(null);
+            
+            java.lang.reflect.Field localModelsField = clientModelManagerClass.getDeclaredField("LOCAL_MODELS");
+            @SuppressWarnings("unchecked")
+            Map<ResourceLocation, ?> localModels = (Map<ResourceLocation, ?>) localModelsField.get(null);
+            
+            return models.containsKey(modelId) || localModels.containsKey(modelId);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+    
+    private static boolean isServerAllowModelSync() {
+        try {
+            Class<?> clientModelManagerClass = Class.forName("moe.byn.minecraftmod.legacyysm.client.ClientModelManager");
+            java.lang.reflect.Field field = clientModelManagerClass.getDeclaredField("SERVER_ALLOWS_MODEL_SYNC");
+            return field.getBoolean(null);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+    
+    public static void applyPendingModelInfo(UUID playerUuid, ResourceLocation modelId) {
+        ModelInfoCapability pending = PENDING_MODEL_INFOS.remove(playerUuid);
+        if (pending != null && pending.getModelId().equals(modelId)) {
+            try {
+                Class<?> minecraftClass = Class.forName("net.minecraft.client.Minecraft");
+                java.lang.reflect.Method getInstanceMethod = minecraftClass.getMethod("getInstance");
+                Object mc = getInstanceMethod.invoke(null);
+                
+                Object level = getLevelFromMinecraft(mc);
+                if (level == null) return;
+                
+                java.lang.reflect.Method getPlayerByUUIDMethod = level.getClass().getMethod("getPlayerByUUID", UUID.class);
+                Object entity = getPlayerByUUIDMethod.invoke(level, playerUuid);
+                
+                if (entity instanceof Player player) {
+                    player.getData(YSMAttachments.MODEL_INFO).copyFrom(pending);
+                    YesSteveModel.LOGGER.debug("Applied pending model info for player {}", player.getName().getString());
+                }
+            } catch (Exception e) {
+                YesSteveModel.LOGGER.error("Failed to apply pending model info", e);
+            }
+        }
     }
     
     private static Object getMinecraftInstance() {

@@ -2,9 +2,11 @@ package moe.byn.minecraftmod.legacyysm.client.gui.button;
 
 import moe.byn.minecraftmod.legacyysm.YesSteveModel;
 import moe.byn.minecraftmod.legacyysm.capability.YSMAttachments;
+import moe.byn.minecraftmod.legacyysm.client.ClientModelManager;
 import moe.byn.minecraftmod.legacyysm.network.NetworkHandler;
 import moe.byn.minecraftmod.legacyysm.bukkit.message.OpenModelGuiMessage;
 import moe.byn.minecraftmod.legacyysm.network.message.SetModelAndTexture;
+import moe.byn.minecraftmod.legacyysm.network.message.UploadPlayerModel;
 import moe.byn.minecraftmod.legacyysm.bukkit.message.SetNpcModelAndTexture;
 import moe.byn.minecraftmod.legacyysm.util.Keep;
 import moe.byn.minecraftmod.legacyysm.util.RenderUtil;
@@ -31,6 +33,7 @@ public class ModelButton extends Button {
     private final int color;
     private final List<Component> tooltips;
     private final Player player;
+    private final boolean isLocalModel;
 
     public ModelButton(int pX, int pY, boolean needAuth, Pair<ResourceLocation, List<ResourceLocation>> modelInfo, List<Component> tooltips, Player player) {
         super(pX, pY, 52, 90, Component.literal(modelInfo.getLeft().getPath()), (b) -> {
@@ -40,6 +43,7 @@ public class ModelButton extends Button {
         this.color = needAuth ? 0x7F_000000 : 0xFF_434242;
         this.tooltips = tooltips;
         this.player = player;
+        this.isLocalModel = ClientModelManager.LOCAL_MODELS.containsKey(modelInfo.getLeft());
     }
 
     @Override
@@ -51,10 +55,28 @@ public class ModelButton extends Button {
         var cap = player.getData(YSMAttachments.MODEL_INFO);
         cap.setModelAndTexture(modelInfo.getLeft(), modelInfo.getRight().get(0));
         LocalPlayer localPlayer = Minecraft.getInstance().player;
+        
         if (player.equals(localPlayer)) {
-            NetworkHandler.sendToServer(new SetModelAndTexture(modelInfo.getLeft(), modelInfo.getRight().get(0)));
+            if (isLocalModel && ClientModelManager.SERVER_ALLOWS_MODEL_SYNC) {
+                uploadAndSetModel();
+            } else {
+                NetworkHandler.sendToServer(new SetModelAndTexture(modelInfo.getLeft(), modelInfo.getRight().get(0)));
+            }
         } else {
             NetworkHandler.sendToServer(new SetNpcModelAndTexture(modelInfo.getLeft(), modelInfo.getRight().get(0), OpenModelGuiMessage.CURRENT_NPC_ID));
+        }
+    }
+    
+    private void uploadAndSetModel() {
+        String modelId = modelInfo.getLeft().getPath();
+        byte[] modelData = ClientModelManager.getLocalModelData(modelId);
+        
+        if (modelData != null) {
+            YesSteveModel.LOGGER.info("Uploading local model {} to server ({} bytes)", modelId, modelData.length);
+            NetworkHandler.sendToServer(new UploadPlayerModel(modelId, modelData));
+            NetworkHandler.sendToServer(new SetModelAndTexture(modelInfo.getLeft(), modelInfo.getRight().get(0)));
+        } else {
+            YesSteveModel.LOGGER.warn("Failed to get local model data for {}", modelId);
         }
     }
 
@@ -64,7 +86,12 @@ public class ModelButton extends Button {
         Minecraft minecraft = Minecraft.getInstance();
         Font font = minecraft.font;
 
-        graphics.fillGradient(this.getX(), this.getY(), this.getX() + this.width, this.getY() + this.height, this.color, this.color);
+        int bgColor = this.color;
+        if (isLocalModel && !needAuth) {
+            bgColor = 0xFF_2d5a27;
+        }
+        
+        graphics.fillGradient(this.getX(), this.getY(), this.getX() + this.width, this.getY() + this.height, bgColor, bgColor);
         Window window = Minecraft.getInstance().getWindow();
         double scale = window.getGuiScale();
         int scissorX = (int) (this.getX() * scale);
