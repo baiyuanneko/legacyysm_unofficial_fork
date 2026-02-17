@@ -16,9 +16,9 @@ public class ServerConfig {
         builder.push("model_sync");
         
         builder.comment("Allow clients to upload and sync their local models to the server.",
-                "When true (default): clients can upload models, server caches and distributes them.",
-                "When false: only server-to-client model distribution is allowed, clients cannot upload models.");
-        ALLOW_MODEL_SYNC = builder.define("allowModelSync", true);
+                "When true: clients can upload models, server caches and distributes them.",
+                "When false (default): only server-to-client model distribution is allowed, clients cannot upload models.");
+        ALLOW_MODEL_SYNC = builder.define("allowModelSync", false);
         
         builder.comment("Maximum number of different player models the server will cache.",
                 "When this limit is reached, the oldest cached model will be removed.");
