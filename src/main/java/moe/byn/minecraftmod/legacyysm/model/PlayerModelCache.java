@@ -6,12 +6,18 @@ import moe.byn.minecraftmod.legacyysm.network.NetworkHandler;
 import moe.byn.minecraftmod.legacyysm.network.message.SyncPlayerModel;
 import moe.byn.minecraftmod.legacyysm.util.ModelIdValidator;
 import com.google.common.collect.Maps;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.players.PlayerList;
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Type;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -21,9 +27,13 @@ public final class PlayerModelCache {
     
     private static final Path PLAYER_MODEL_CACHE = ServerModelManager.CACHE.resolve("player_models");
     
+    private static final Path PLAYER_MODELS_MAPPING_FILE = PLAYER_MODEL_CACHE.resolve("player_models_mapping.json");
+    
     private static final Map<UUID, String> PLAYER_MODELS = Maps.newConcurrentMap();
     
     private static final LinkedHashMap<String, CachedModelInfo> MODEL_CACHE = new LinkedHashMap<>(16, 0.75f, true);
+    
+    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     
     private static boolean initialized = false;
 
@@ -32,12 +42,73 @@ public final class PlayerModelCache {
         initialized = true;
         
         try {
-            java.nio.file.Files.createDirectories(PLAYER_MODEL_CACHE);
+            Files.createDirectories(PLAYER_MODEL_CACHE);
         } catch (IOException e) {
             YesSteveModel.LOGGER.error("Failed to create player model cache directory", e);
         }
         
-        YesSteveModel.LOGGER.info("PlayerModelCache initialized");
+        loadPlayerModelsMapping();
+        
+        YesSteveModel.LOGGER.info("PlayerModelCache initialized with {} player model mappings", PLAYER_MODELS.size());
+    }
+    
+    /**
+     * Load UUID -> modelId mapping from disk and restore MODEL_CACHE entries
+     * for all mappings whose cache files still exist on disk.
+     */
+    private static void loadPlayerModelsMapping() {
+        File mappingFile = PLAYER_MODELS_MAPPING_FILE.toFile();
+        if (!mappingFile.exists()) {
+            YesSteveModel.LOGGER.info("No existing player models mapping file found");
+            return;
+        }
+        
+        try {
+            String json = FileUtils.readFileToString(mappingFile, StandardCharsets.UTF_8);
+            Type type = new TypeToken<Map<String, String>>() {}.getType();
+            Map<String, String> loaded = GSON.fromJson(json, type);
+            
+            if (loaded != null) {
+                for (Map.Entry<String, String> entry : loaded.entrySet()) {
+                    try {
+                        UUID uuid = UUID.fromString(entry.getKey());
+                        String modelId = entry.getValue();
+                        
+                        PLAYER_MODELS.put(uuid, modelId);
+                        
+                        String cacheKey = generateCacheKey(uuid, modelId);
+                        File cacheFile = PLAYER_MODEL_CACHE.resolve(cacheKey).toFile();
+                        if (cacheFile.exists()) {
+                            MODEL_CACHE.put(cacheKey, new CachedModelInfo(uuid, modelId, System.currentTimeMillis()));
+                            YesSteveModel.LOGGER.debug("Restored cached model mapping: {} -> {}", uuid, modelId);
+                        } else {
+                            YesSteveModel.LOGGER.warn("Cache file missing for player {} model {}, removing mapping", uuid, modelId);
+                            PLAYER_MODELS.remove(uuid);
+                        }
+                    } catch (IllegalArgumentException e) {
+                        YesSteveModel.LOGGER.warn("Invalid UUID in mapping file: {}", entry.getKey());
+                    }
+                }
+                
+                savePlayerModelsMapping();
+                YesSteveModel.LOGGER.info("Restored {} player model mappings from disk ({} have cache files)", 
+                        loaded.size(), MODEL_CACHE.size());
+            }
+        } catch (Exception e) {
+            YesSteveModel.LOGGER.error("Failed to load player models mapping", e);
+        }
+    }
+    
+    /**
+     * Persist the current UUID -> modelId mapping to disk.
+     */
+    private static void savePlayerModelsMapping() {
+        try {
+            String json = GSON.toJson(PLAYER_MODELS);
+            FileUtils.writeStringToFile(PLAYER_MODELS_MAPPING_FILE.toFile(), json, StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            YesSteveModel.LOGGER.error("Failed to save player models mapping", e);
+        }
     }
 
     public static boolean cachePlayerModel(ServerPlayer player, String modelId, byte[] modelData) {
@@ -80,6 +151,9 @@ public final class PlayerModelCache {
             FileUtils.writeByteArrayToFile(cacheFile, modelData);
             
             MODEL_CACHE.put(cacheKey, new CachedModelInfo(player.getUUID(), modelId, System.currentTimeMillis()));
+            
+            savePlayerModelsMapping();
+            
             YesSteveModel.LOGGER.info("Cached player model: {} (total cached: {})", cacheKey, MODEL_CACHE.size());
             return true;
         } catch (IOException e) {
@@ -106,18 +180,30 @@ public final class PlayerModelCache {
         
         String cacheKey = generateCacheKey(playerUuid, modelId);
         CachedModelInfo info = MODEL_CACHE.get(cacheKey);
-        if (info == null) {
+        if (info != null) {
+            try {
+                File cacheFile = PLAYER_MODEL_CACHE.resolve(cacheKey).toFile();
+                if (cacheFile.exists()) {
+                    return FileUtils.readFileToByteArray(cacheFile);
+                }
+            } catch (IOException e) {
+                YesSteveModel.LOGGER.error("Failed to read cached model", e);
+            }
             return null;
         }
         
+        // Disk fallback for entries evicted from memory but still on disk
         try {
             File cacheFile = PLAYER_MODEL_CACHE.resolve(cacheKey).toFile();
             if (cacheFile.exists()) {
-                return FileUtils.readFileToByteArray(cacheFile);
+                byte[] data = FileUtils.readFileToByteArray(cacheFile);
+                MODEL_CACHE.put(cacheKey, new CachedModelInfo(playerUuid, modelId, System.currentTimeMillis()));
+                return data;
             }
         } catch (IOException e) {
-            YesSteveModel.LOGGER.error("Failed to read cached model", e);
+            YesSteveModel.LOGGER.error("Failed to read cached model from disk fallback", e);
         }
+        
         return null;
     }
 
@@ -127,7 +213,10 @@ public final class PlayerModelCache {
 
     public static boolean hasCachedModel(UUID playerUuid, String modelId) {
         String cacheKey = generateCacheKey(playerUuid, modelId);
-        return MODEL_CACHE.containsKey(cacheKey);
+        if (MODEL_CACHE.containsKey(cacheKey)) {
+            return true;
+        }
+        return PLAYER_MODEL_CACHE.resolve(cacheKey).toFile().exists();
     }
 
     public static void broadcastPlayerModel(ServerPlayer source, String modelId, byte[] modelData) {
@@ -158,8 +247,15 @@ public final class PlayerModelCache {
         }
     }
 
+    /**
+     * Called when a player disconnects. We no longer remove the PLAYER_MODELS mapping
+     * so that the model can be restored when the player or other players reconnect.
+     * LRU eviction will handle cache size limits.
+     */
     public static void onPlayerDisconnect(UUID playerUuid) {
-        PLAYER_MODELS.remove(playerUuid);
+        // Keep the mapping so rejoining players can see cached models.
+        // The mapping is persisted to disk and survives server restarts.
+        YesSteveModel.LOGGER.debug("Player {} disconnected, keeping model mapping for rejoin", playerUuid);
     }
 
     private static String generateCacheKey(UUID playerUuid, String modelId) {

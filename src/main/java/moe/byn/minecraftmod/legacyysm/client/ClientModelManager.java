@@ -19,6 +19,7 @@ import moe.byn.minecraftmod.legacyysm.model.ServerModelManager;
 import moe.byn.minecraftmod.legacyysm.model.format.FolderFormat;
 import moe.byn.minecraftmod.legacyysm.network.NetworkHandler;
 import moe.byn.minecraftmod.legacyysm.network.message.SyncModelFiles;
+import moe.byn.minecraftmod.legacyysm.network.message.SyncModelInfo;
 import moe.byn.minecraftmod.legacyysm.util.ModelIdUtil;
 import moe.byn.minecraftmod.legacyysm.util.ObjectStreamUtil;
 import moe.byn.minecraftmod.legacyysm.util.ThreadTools;
@@ -320,6 +321,7 @@ public class ClientModelManager {
                 }
             }
             YesSteveModel.LOGGER.info("LOCAL_MODELS now contains {} models", LOCAL_MODELS.size());
+            SyncModelInfo.applyAllPendingModelInfos();
         } catch (Exception e) {
             YesSteveModel.LOGGER.error("Error loading local models", e);
         }

@@ -43,6 +43,7 @@ public final class NetworkHandler {
         registrar.playToClient(SyncServerConfig.TYPE, SyncServerConfig.STREAM_CODEC, SyncServerConfig::handleClient);
         registrar.playToServer(UploadPlayerModel.TYPE, UploadPlayerModel.STREAM_CODEC, UploadPlayerModel::handleServer);
         registrar.playToClient(SyncPlayerModel.TYPE, SyncPlayerModel.STREAM_CODEC, SyncPlayerModel::handleClient);
+        registrar.playToClient(RequestUploadModel.TYPE, RequestUploadModel.STREAM_CODEC, RequestUploadModel::handleClient);
     }
 
     private static void registerBukkitMessages(PayloadRegistrar registrar) {

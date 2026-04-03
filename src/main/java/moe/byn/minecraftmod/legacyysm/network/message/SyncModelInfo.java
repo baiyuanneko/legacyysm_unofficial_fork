@@ -129,24 +129,43 @@ public class SyncModelInfo implements CustomPacketPayload {
     public static void applyPendingModelInfo(UUID playerUuid, ResourceLocation modelId) {
         ModelInfoCapability pending = PENDING_MODEL_INFOS.remove(playerUuid);
         if (pending != null && pending.getModelId().equals(modelId)) {
-            try {
-                Class<?> minecraftClass = Class.forName("net.minecraft.client.Minecraft");
-                java.lang.reflect.Method getInstanceMethod = minecraftClass.getMethod("getInstance");
-                Object mc = getInstanceMethod.invoke(null);
-                
-                Object level = getLevelFromMinecraft(mc);
-                if (level == null) return;
-                
-                java.lang.reflect.Method getPlayerByUUIDMethod = level.getClass().getMethod("getPlayerByUUID", UUID.class);
-                Object entity = getPlayerByUUIDMethod.invoke(level, playerUuid);
-                
-                if (entity instanceof Player player) {
-                    player.getData(YSMAttachments.MODEL_INFO).copyFrom(pending);
-                    YesSteveModel.LOGGER.debug("Applied pending model info for player {}", player.getName().getString());
-                }
-            } catch (Exception e) {
-                YesSteveModel.LOGGER.error("Failed to apply pending model info", e);
+            applyCapabilityToPlayer(playerUuid, pending);
+        }
+    }
+    
+    public static void applyAllPendingModelInfos() {
+        if (PENDING_MODEL_INFOS.isEmpty()) return;
+        
+        java.util.Iterator<Map.Entry<UUID, ModelInfoCapability>> it = PENDING_MODEL_INFOS.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry<UUID, ModelInfoCapability> entry = it.next();
+            if (isModelAvailable(entry.getValue().getModelId())) {
+                it.remove();
+                applyCapabilityToPlayer(entry.getKey(), entry.getValue());
+                YesSteveModel.LOGGER.debug("Applied pending model info for player UUID {} after model became available", entry.getKey());
             }
+        }
+    }
+    
+    private static void applyCapabilityToPlayer(UUID playerUuid, ModelInfoCapability capability) {
+        try {
+            Class<?> minecraftClass = Class.forName("net.minecraft.client.Minecraft");
+            java.lang.reflect.Method getInstanceMethod = minecraftClass.getMethod("getInstance");
+            Object mc = getInstanceMethod.invoke(null);
+            
+            Object level = getLevelFromMinecraft(mc);
+            if (level == null) return;
+            
+            java.lang.reflect.Method getPlayerByUUIDMethod = level.getClass().getMethod("getPlayerByUUID", UUID.class);
+            Object entity = getPlayerByUUIDMethod.invoke(level, playerUuid);
+            
+            if (entity instanceof Player player) {
+                player.getData(YSMAttachments.MODEL_INFO).copyFrom(capability);
+                YesSteveModel.LOGGER.debug("Applied model info for player {} (model={})", 
+                        player.getName().getString(), capability.getModelId());
+            }
+        } catch (Exception e) {
+            YesSteveModel.LOGGER.error("Failed to apply capability to player", e);
         }
     }
     

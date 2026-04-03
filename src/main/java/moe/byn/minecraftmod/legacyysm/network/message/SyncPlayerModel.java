@@ -84,25 +84,36 @@ public class SyncPlayerModel implements CustomPacketPayload {
                     return;
                 }
                 
+                // Schedule ALL work on the main thread to avoid race conditions:
+                // 1. Register model into GeckoLibCache and MODELS map
+                // 2. Apply any pending capability from SyncModelInfo
+                // 3. Set player capability
+                // This ensures the model is registered BEFORE the capability is set,
+                // so the renderer always finds the model in GeckoLibCache.
                 final ModelData finalData = data;
                 Minecraft.getInstance().execute(() -> {
+                    // Step 1: Register the model (geo, textures, animations)
                     ClientModelManager.registerAll(finalData);
                     YesSteveModel.LOGGER.info("Registered synced model: {} with {} textures", 
                             finalData.getModelId(), finalData.getTexture().size());
+                    
+                    ResourceLocation modelLoc = ResourceLocation.fromNamespaceAndPath(YesSteveModel.MOD_ID, message.modelId);
+                    
+                    // Step 2: Apply any pending model info that was deferred because the model wasn't available
+                    SyncModelInfo.applyPendingModelInfo(message.playerUuid, modelLoc);
+                    SyncModelInfo.applyAllPendingModelInfos();
+                    
+                    // Step 3: Set the player's capability if the player entity exists
+                    Player player = Minecraft.getInstance().level == null ? null : 
+                            Minecraft.getInstance().level.getPlayerByUUID(message.playerUuid);
+                    if (player != null) {
+                        String firstTexture = finalData.getTexture().keySet().iterator().next();
+                        ResourceLocation textureLoc = ModelIdUtil.getSubModelId(modelLoc, firstTexture);
+                        player.getData(YSMAttachments.MODEL_INFO).setModelAndTexture(modelLoc, textureLoc);
+                        YesSteveModel.LOGGER.info("Set player {} model to {} with texture {}", 
+                                player.getName().getString(), modelLoc, textureLoc);
+                    }
                 });
-                
-                ResourceLocation modelLoc = ResourceLocation.fromNamespaceAndPath(YesSteveModel.MOD_ID, message.modelId);
-                SyncModelInfo.applyPendingModelInfo(message.playerUuid, modelLoc);
-                
-                Player player = Minecraft.getInstance().level == null ? null : 
-                        Minecraft.getInstance().level.getPlayerByUUID(message.playerUuid);
-                if (player != null) {
-                    String firstTexture = data.getTexture().keySet().iterator().next();
-                    ResourceLocation textureLoc = ModelIdUtil.getSubModelId(modelLoc, firstTexture);
-                    player.getData(YSMAttachments.MODEL_INFO).setModelAndTexture(modelLoc, textureLoc);
-                    YesSteveModel.LOGGER.info("Set player {} model to {} with texture {}", 
-                            player.getName().getString(), modelLoc, textureLoc);
-                }
             } catch (Exception e) {
                 YesSteveModel.LOGGER.error("Error in handleClient for SyncPlayerModel", e);
             }

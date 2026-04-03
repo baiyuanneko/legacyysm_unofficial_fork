@@ -2,10 +2,12 @@ package moe.byn.minecraftmod.legacyysm.event;
 
 import moe.byn.minecraftmod.legacyysm.YesSteveModel;
 import moe.byn.minecraftmod.legacyysm.capability.*;
+import moe.byn.minecraftmod.legacyysm.model.PlayerModelCache;
 import moe.byn.minecraftmod.legacyysm.model.ServerModelManager;
 import moe.byn.minecraftmod.legacyysm.network.NetworkHandler;
 import moe.byn.minecraftmod.legacyysm.network.message.SyncAuthModels;
 import moe.byn.minecraftmod.legacyysm.network.message.SyncModelInfo;
+import moe.byn.minecraftmod.legacyysm.network.message.SyncPlayerModel;
 import moe.byn.minecraftmod.legacyysm.network.message.SyncStarModels;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
@@ -38,6 +40,17 @@ public final class CapabilityEvent {
             ModelInfoCapability cap = trackPlayer.getData(YSMAttachments.MODEL_INFO);
             SyncModelInfo syncMsg = new SyncModelInfo(trackPlayer.getId(), cap);
             NetworkHandler.sendToClientPlayer(syncMsg, player);
+
+            // Also send the model file data from cache if available,
+            // so the receiving client can render the tracked player's model.
+            String modelId = PlayerModelCache.getPlayerModelId(trackPlayer.getUUID());
+            if (modelId != null) {
+                byte[] modelData = PlayerModelCache.getCachedModel(trackPlayer.getUUID(), modelId);
+                if (modelData != null) {
+                    NetworkHandler.sendToClientPlayer(
+                            new SyncPlayerModel(trackPlayer.getUUID(), modelId, modelData), player);
+                }
+            }
         }
     }
 
