@@ -17,6 +17,7 @@ import moe.byn.minecraftmod.legacyysm.geckolib3.resource.GeckoLibCache;
 import moe.byn.minecraftmod.legacyysm.geckolib3.util.json.JsonAnimationUtils;
 import moe.byn.minecraftmod.legacyysm.model.ServerModelManager;
 import moe.byn.minecraftmod.legacyysm.model.format.FolderFormat;
+import moe.byn.minecraftmod.legacyysm.model.format.NewYsmFormat;
 import moe.byn.minecraftmod.legacyysm.network.NetworkHandler;
 import moe.byn.minecraftmod.legacyysm.network.message.SyncModelFiles;
 import moe.byn.minecraftmod.legacyysm.network.message.SyncModelInfo;
@@ -255,6 +256,17 @@ public class ClientModelManager {
                     
                     try {
                         Map<String, byte[]> rawData = moe.byn.minecraftmod.legacyysm.util.YesModelUtils.input(ysmFile);
+                        if (rawData.isEmpty()) {
+                            try {
+                                if (NewYsmFormat.isV3Format(ysmFile)) {
+                                    rawData = NewYsmFormat.parseToFlatData(ysmFile);
+                                }
+                            } catch (Exception e) {
+                                YesSteveModel.LOGGER.warn(
+                                        "V3 parsing unavailable for {}: {}",
+                                        modelId, e.getMessage());
+                            }
+                        }
                         if (!rawData.isEmpty() && rawData.containsKey("main.json") && rawData.containsKey("arm.json")) {
                             ModelData data = moe.byn.minecraftmod.legacyysm.model.format.YsmFormat.getModelData(rawData, modelId, false);
                             
@@ -465,6 +477,17 @@ public class ClientModelManager {
                 if (ysmFile.isFile()) {
                     YesSteveModel.LOGGER.info("getLocalModelData: found .ysm format for {} at {}", modelId, ysmFile.getAbsolutePath());
                     Map<String, byte[]> rawData = moe.byn.minecraftmod.legacyysm.util.YesModelUtils.input(ysmFile);
+                    if (rawData.isEmpty()) {
+                        try {
+                            if (NewYsmFormat.isV3Format(ysmFile)) {
+                                rawData = NewYsmFormat.parseToFlatData(ysmFile);
+                            }
+                        } catch (Exception e) {
+                            YesSteveModel.LOGGER.warn(
+                                    "V3 parsing unavailable for upload {}: {}",
+                                    modelId, e.getMessage());
+                        }
+                    }
                     if (!rawData.isEmpty()) {
                         data = moe.byn.minecraftmod.legacyysm.model.format.YsmFormat.getModelData(rawData, modelId, false);
                     }

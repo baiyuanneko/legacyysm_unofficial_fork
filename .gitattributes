@@ -3,3 +3,10 @@
 # are changed when only line endings change.
 src/generated/**/.cache/cache text eol=lf
 src/generated/**/*.json text eol=lf
+
+# Native binaries — never apply text transformations
+src/main/resources/natives/**/*.so binary
+src/main/resources/natives/**/*.dll binary
+src/main/resources/natives/**/*.dylib binary
+src/main/resources/natives/**/YSMParser binary
+src/main/resources/natives/**/YSMParser.exe binary

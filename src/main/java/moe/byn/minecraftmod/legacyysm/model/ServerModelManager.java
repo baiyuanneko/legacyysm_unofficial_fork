@@ -4,6 +4,7 @@ import moe.byn.minecraftmod.legacyysm.YesSteveModel;
 import moe.byn.minecraftmod.legacyysm.config.ServerConfig;
 import moe.byn.minecraftmod.legacyysm.data.EncryptTools;
 import moe.byn.minecraftmod.legacyysm.model.format.FolderFormat;
+import moe.byn.minecraftmod.legacyysm.model.format.NewYsmFormat;
 import moe.byn.minecraftmod.legacyysm.model.format.ServerModelInfo;
 import moe.byn.minecraftmod.legacyysm.model.format.YsmFormat;
 import moe.byn.minecraftmod.legacyysm.model.format.ZipFormat;
@@ -171,6 +172,7 @@ public final class ServerModelManager {
     }
 
     private static void cacheAllModels(Path rootPath) {
+        NewYsmFormat.cacheAllModels(rootPath);
         YsmFormat.cacheAllModels(rootPath);
         ZipFormat.cacheAllModels(rootPath);
         FolderFormat.cacheAllModels(rootPath);
