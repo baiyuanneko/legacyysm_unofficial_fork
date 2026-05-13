@@ -4,10 +4,21 @@ import net.minecraft.resources.ResourceLocation;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.Nullable;
+import java.util.Locale;
 
 public final class ModelIdUtil {
     public static ResourceLocation getSubModelId(ResourceLocation id, String subName) {
-        String newPath = id.getPath() + "/" + subName;
+        String sanitized = subName.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9/._-]", "_");
+        if (!sanitized.equals(subName.toLowerCase(Locale.ROOT))) {
+            int dotIdx = sanitized.lastIndexOf('.');
+            String hash = Integer.toHexString(subName.hashCode());
+            if (dotIdx > 0) {
+                sanitized = sanitized.substring(0, dotIdx) + "_" + hash + sanitized.substring(dotIdx);
+            } else {
+                sanitized = sanitized + "_" + hash;
+            }
+        }
+        String newPath = id.getPath() + "/" + sanitized;
         return ResourceLocation.fromNamespaceAndPath(id.getNamespace(), newPath);
     }
 

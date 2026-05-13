@@ -103,6 +103,7 @@ public class ClientModelManager {
                 }
             }
         } catch (Exception e) {
+            YesSteveModel.LOGGER.error("Geo failed: {}", id, e);
             e.printStackTrace();
         }
     }
