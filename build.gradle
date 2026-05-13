@@ -163,6 +163,22 @@ repositories {
 dependencies {
 //    implementation fg.deobf('libs:firstperson-forge:2.2.3-mc1.20')
 //    implementation fg.deobf('libs:notenoughanimations-forge:1.6.4-mc1.20')
+    implementation files('libs/imagestream-1.0-SNAPSHOT.jar')
+}
+
+// Extract ImageStream library into the classes dir so ModLauncher can find it
+tasks.register('extractImageStream', Copy) {
+    from zipTree('libs/imagestream-1.0-SNAPSHOT.jar')
+    into layout.buildDirectory.dir("classes/java/main")
+    include 'rip/ysm/**'
+}
+
+tasks.named('compileJava').configure {
+    finalizedBy extractImageStream
+}
+
+tasks.named('runClient').configure {
+    dependsOn extractImageStream
 }
 
 jar {
@@ -172,6 +188,8 @@ jar {
                 "Implementation-Version": "${version}"
         ])
     }
+    dependsOn extractImageStream
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 
 publishing {

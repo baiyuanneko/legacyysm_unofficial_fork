@@ -7,8 +7,12 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.server.packs.resources.ResourceManager;
 import org.jetbrains.annotations.NotNull;
+import rip.ysm.imagestream.webp.WebpDecoder;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 public class OuterFileTexture extends AbstractTexture {
@@ -30,7 +34,8 @@ public class OuterFileTexture extends AbstractTexture {
 
     private void doLoad() {
         try {
-            NativeImage imageIn = NativeImage.read(new ByteArrayInputStream(data));
+            byte[] imageData = ensurePng(data);
+            NativeImage imageIn = NativeImage.read(new ByteArrayInputStream(imageData));
             int width = imageIn.getWidth();
             int height = imageIn.getHeight();
             TextureUtil.prepareImage(this.getId(), 0, width, height);
@@ -38,5 +43,22 @@ public class OuterFileTexture extends AbstractTexture {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private static byte[] ensurePng(byte[] rawData) {
+        if (rawData.length < 4) {
+            return rawData;
+        }
+        if (rawData[0] == 'R' && rawData[1] == 'I' && rawData[2] == 'F' && rawData[3] == 'F') {
+            try {
+                BufferedImage image = new WebpDecoder().read(rawData);
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                ImageIO.write(image, "png", baos);
+                return baos.toByteArray();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        return rawData;
     }
 }

@@ -117,7 +117,10 @@ public class SyncPlayerModel implements CustomPacketPayload {
                         } else if (textureMap.containsKey("texture.png")) {
                             firstTexture = "texture.png";
                         } else {
-                            firstTexture = textureMap.keySet().iterator().next();
+                            firstTexture = textureMap.keySet().stream()
+                                    .filter(name -> !name.equals("arrow.png"))
+                                    .findFirst()
+                                    .orElseGet(() -> textureMap.keySet().iterator().next());
                         }
                         ResourceLocation textureLoc = ModelIdUtil.getSubModelId(modelLoc, firstTexture);
                         player.getData(YSMAttachments.MODEL_INFO).setModelAndTexture(modelLoc, textureLoc);
