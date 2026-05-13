@@ -109,7 +109,7 @@ public final class FolderFormat {
         model.put("arm", getBytes(modelPath, ARM_MODEL_FILE_NAME));
 
 
-        Map<String, byte[]> texture = Maps.newLinkedHashMap();
+        Map<String, byte[]> texture = Maps.newHashMap();
         Collection<File> textures = FileUtils.listFiles(modelPath.toFile(), new String[]{"png"}, false);
         for (File png : textures) {
             String fileName = png.getName();
