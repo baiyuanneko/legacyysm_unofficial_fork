@@ -53,17 +53,18 @@ public class ModelButton extends Button {
             return;
         }
         var cap = player.getData(YSMAttachments.MODEL_INFO);
-        cap.setModelAndTexture(modelInfo.getLeft(), modelInfo.getRight().get(0));
+        ResourceLocation selectedTexture = getDefaultTexture(modelInfo.getRight());
+        cap.setModelAndTexture(modelInfo.getLeft(), selectedTexture);
         LocalPlayer localPlayer = Minecraft.getInstance().player;
         
         if (player.equals(localPlayer)) {
             if (isLocalModel && ClientModelManager.SERVER_ALLOWS_MODEL_SYNC) {
                 uploadAndSetModel();
             } else {
-                NetworkHandler.sendToServer(new SetModelAndTexture(modelInfo.getLeft(), modelInfo.getRight().get(0)));
+                NetworkHandler.sendToServer(new SetModelAndTexture(modelInfo.getLeft(), selectedTexture));
             }
         } else {
-            NetworkHandler.sendToServer(new SetNpcModelAndTexture(modelInfo.getLeft(), modelInfo.getRight().get(0), OpenModelGuiMessage.CURRENT_NPC_ID));
+            NetworkHandler.sendToServer(new SetNpcModelAndTexture(modelInfo.getLeft(), selectedTexture, OpenModelGuiMessage.CURRENT_NPC_ID));
         }
     }
     
@@ -74,7 +75,7 @@ public class ModelButton extends Button {
         if (modelData != null) {
             YesSteveModel.LOGGER.info("Uploading local model {} to server ({} bytes)", modelId, modelData.length);
             NetworkHandler.sendToServer(new UploadPlayerModel(modelId, modelData));
-            NetworkHandler.sendToServer(new SetModelAndTexture(modelInfo.getLeft(), modelInfo.getRight().get(0)));
+            NetworkHandler.sendToServer(new SetModelAndTexture(modelInfo.getLeft(), getDefaultTexture(modelInfo.getRight())));
         } else {
             YesSteveModel.LOGGER.warn("Failed to get local model data for {}", modelId);
         }
@@ -99,7 +100,7 @@ public class ModelButton extends Button {
         int scissorW = (int) (this.width * scale);
         int scissorH = (int) ((this.height - 20) * scale);
         RenderSystem.enableScissor(scissorX, scissorY, scissorW, scissorH);
-        RenderUtil.renderEntityInInventory(this.getX() + this.width / 2, this.getY() + this.height / 2 + 20, 30, player, modelInfo.getLeft(), modelInfo.getRight().get(0));
+        RenderUtil.renderEntityInInventory(this.getX() + this.width / 2, this.getY() + this.height / 2 + 20, 30, player, modelInfo.getLeft(), getDefaultTexture(modelInfo.getRight()));
         RenderSystem.disableScissor();
 
         Component message = this.getMessage();
@@ -139,5 +140,12 @@ public class ModelButton extends Button {
     @Keep
     protected boolean clicked(double pMouseX, double pMouseY) {
         return !this.needAuth && super.clicked(pMouseX, pMouseY);
+    }
+
+    private static ResourceLocation getDefaultTexture(List<ResourceLocation> textures) {
+        return textures.stream()
+                .filter(t -> t.getPath().endsWith("/default.png"))
+                .findFirst()
+                .orElse(textures.get(0));
     }
 }

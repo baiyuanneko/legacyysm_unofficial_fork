@@ -107,7 +107,10 @@ public class SyncPlayerModel implements CustomPacketPayload {
                     Player player = Minecraft.getInstance().level == null ? null : 
                             Minecraft.getInstance().level.getPlayerByUUID(message.playerUuid);
                     if (player != null) {
-                        String firstTexture = finalData.getTexture().keySet().iterator().next();
+                        Map<String, byte[]> textureMap = finalData.getTexture();
+                        String firstTexture = textureMap.containsKey("default.png")
+                                ? "default.png"
+                                : textureMap.keySet().iterator().next();
                         ResourceLocation textureLoc = ModelIdUtil.getSubModelId(modelLoc, firstTexture);
                         player.getData(YSMAttachments.MODEL_INFO).setModelAndTexture(modelLoc, textureLoc);
                         YesSteveModel.LOGGER.info("Set player {} model to {} with texture {}", 

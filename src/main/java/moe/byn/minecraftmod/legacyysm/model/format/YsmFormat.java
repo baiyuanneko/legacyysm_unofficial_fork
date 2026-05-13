@@ -91,7 +91,7 @@ public final class YsmFormat {
         model.put("main", getBytes(data, MAIN_MODEL_FILE_NAME));
         model.put("arm", getBytes(data, ARM_MODEL_FILE_NAME));
 
-        Map<String, byte[]> texture = Maps.newHashMap();
+        Map<String, byte[]> texture = Maps.newLinkedHashMap();
         data.forEach((name, textureData) -> {
             if (name.endsWith(".png")) {
                 texture.put(name, textureData);
