@@ -85,12 +85,10 @@ public class SyncModelInfo implements CustomPacketPayload {
                     
                     if (modelAvailable) {
                         player.getData(YSMAttachments.MODEL_INFO).copyFrom(message.capability);
-                    } else if (isServerAllowModelSync()) {
+                    } else {
                         PENDING_MODEL_INFOS.put(player.getUUID(), message.capability);
                         YesSteveModel.LOGGER.debug("Deferring model update for player {} - model {} not yet available", 
                                 player.getName().getString(), modelId);
-                    } else {
-                        player.getData(YSMAttachments.MODEL_INFO).copyFrom(message.capability);
                     }
                 }
             } catch (InterruptedException e) {

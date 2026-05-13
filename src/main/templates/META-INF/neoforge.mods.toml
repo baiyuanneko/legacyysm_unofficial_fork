@@ -13,6 +13,8 @@ license="${mod_license}"
 
     Notice that this is not the official version of Yes Steve Model or LegacyYSM. The official version of YSM is still actively updating at: https://modrinth.com/mod/yes-steve-model
 
+    Since version 1.1.9, the project has implemented the compatibility with newer YSM model format versions, and partly referenced and used source code and compiled programs from OpenYSM, YSMParser and YSM-Report projects.
+
     For information about this forked version, see: https://github.com/baiyuanneko/legacyysm_unofficial_fork
 
     ---
@@ -20,6 +22,8 @@ license="${mod_license}"
     这是一个基于 GeckoLib 魔改玩家模型的模组，原本由 Yes Steve Model 原版团队开发并开源了旧版本（1.1.5），现在由 Baiyuanneko 进行了非官方的 Fork 与修改。原版致谢：bernie-g (GeckoLib), fadookie (mclib), TT432 & SQwatermark (帮助原作者解决了许多艰难的问题).
 
     这并非 Yes Steve Model 的官方版本，官方版本仍在 https://modrinth.com/mod/yes-steve-model 活跃更新中。
+
+    自版本 1.1.9 起，本项目实现了对新版加密模型格式的加载兼容，并部分参考和使用了 OpenYSM、YSMParser、YSM-Report 等项目的源代码及构建产物。
 
     如对此改版有更多问题和疑问，敬请参考 https://github.com/baiyuanneko/legacyysm_unofficial_fork
     '''

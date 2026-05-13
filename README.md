@@ -6,7 +6,9 @@
 
 这是一个非官方的对旧版 Yes Steve Model 1.1.5 版本(即 <https://github.com/YesSteveModel/LgeacyYSM/> ) 源代码的 Fork 和修改版本，目前主要是进行了对 Neoforge 1.21.1 的改造和支持，并增添了新功能和逻辑。
 
-当前支持状态：
+由于现时已出现对 YSM 的新版加密格式（1.20.1forge-2.6.4）的公开解析手段，本项目自版本 1.1.9 起已集成 YSMParser 并实现了对新版模型格式的加载支持。
+
+Minecraft 版本支持状态：
 
 - 1.21.1-Neoforge： **✔客户端已支持 ✔服务端已支持**
 
@@ -37,10 +39,24 @@
 
 ## Why this project
 
-由于官方版 YSM 在更新新版本后，将核心部分使用 C++ 重写，导致新版本无法直接跨平台，因而暂时还未支持 OS X 系统，而本项目基于的旧版可以支持跨平台使用，可以弥补官方版 YSM 无法在 OS X 系统使用的不足。此外，本项目可以添加一些方便使用的新特性和新逻辑。
+### 与官方版 YSM 的比较
 
-本项目不会支持新版模型格式。
+由于官方版 YSM 在 v2 版本之后，将核心部分使用 C++ 重写，导致新版本无法直接跨平台，因而暂时还未支持 OS X 系统，而本项目基于的旧版可以支持跨平台使用，可以弥补官方版 YSM 无法在 OS X 系统使用的不足。此外，本项目可以添加一些方便使用的新特性和新逻辑。
 
+## 与 OpenYSM 的关系
+
+为了使本项目支持新版 YSM 加密格式，本项目部分参考和使用了 OpenYSM 的源代码，感谢其对开源社区的贡献！
+
+## 与 YSMParser 的关系
+
+本项目基于的旧版 YSM 源码本身不支持新版 YSM 的加密方式。自版本 1.1.9 起，本项目将集成 YSMParser 并实现对新版 YSM 加密模型格式的加载支持。也感谢 YSMParser 开发团队开源了解析 YSM 模型的库。本项目同样部分参考和使用了 YSMParser 的源代码和构建产物，感谢其对开源社区的贡献！
+
+## 致谢
+
+- [YSM 官方开发团队](https://github.com/YesSteveModel/LgeacyYSM/)开发了原始模组并开源了旧版v1.1.5版本源码
+- [YSMParser](https://github.com/OpenYSM/YSMParser/)实现了对新版加密格式的解析并开源
+- [OpenYSM](https://github.com/OpenYSM/OpenYSM)作为本项目对新版加密格式支持的参考实现
+- [YSM-Report](https://github.com/OpenYSM/YSM-Report/)公开了YSM不同格式的分析细节
 
 ## 联系方式、贡献、漏洞提交、许可证等
 
@@ -48,7 +64,7 @@
 
 联系邮箱：```baiyang-lzy@outlook.com```。如有安全漏洞，建议是发往本邮箱而不是提交到 issue 区。
 
-本项目采用和原项目一样的许可证：BSD 3-Clause License，也感谢 YSM 原开发团队的开源！自带模型等模型文件可能有不同的许可证，具体请看下方附的原始 README.md 文档。
+本项目采用和原项目一样的许可证：BSD 3-Clause License，也感谢 YSM 原开发团队的开源！自带模型等模型文件可能有不同的许可证，具体请看下方附的原始 README.md 文档。部分源代码（如com.ysm.parser包下的源码）来自 YSMParser，它们归属于 YSMParser 开发团队并使用 MIT 许可证；resources/natives/ysmparser 下的文件来自 YSMParser 的源代码及官方构建产物，它们归属于 YSMParser 开发团队并使用 MIT 许可证。本项目同样包含了对 OpenYSM 模型的参考实现或集成，它们归属于 OpenYSM 团队并遵循 MIT 许可证。
 
 ---
 

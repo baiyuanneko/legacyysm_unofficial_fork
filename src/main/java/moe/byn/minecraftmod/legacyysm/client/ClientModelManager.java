@@ -76,6 +76,7 @@ public class ClientModelManager {
         ClientModelManager.registerGeo(modelId, data.getModel());
         ClientModelManager.registerAnimations(ModelIdUtil.getMainId(modelId), data.getAnimation());
         ClientModelManager.registerTexture(modelId, data.getTexture());
+        SyncModelInfo.applyAllPendingModelInfos();
     }
 
     public static void registerGeo(ResourceLocation id, Map<String, byte[]> mapData) {
