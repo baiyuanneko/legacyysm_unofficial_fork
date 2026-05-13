@@ -103,7 +103,24 @@ public final class YsmFormat {
         animation.put("arm", getBytes(data, ARM_ANIMATION_FILE_NAME));
         animation.put("extra", getBytes(data, EXTRA_ANIMATION_FILE_NAME));
 
-        return new ModelData(modelId, isAuth, Type.YSM, model, texture, animation);
+        ModelData modelData = new ModelData(modelId, isAuth, Type.YSM, model, texture, animation);
+
+        if (data.containsKey("ysm.json")) {
+            try {
+                String ysmJsonStr = new String(data.get("ysm.json"), StandardCharsets.UTF_8);
+                com.google.gson.JsonObject ysmRoot = YesSteveModel.GSON.fromJson(ysmJsonStr, com.google.gson.JsonObject.class);
+                if (ysmRoot != null && ysmRoot.has("properties")) {
+                    String defaultTex = ysmRoot.getAsJsonObject("properties").get("default_texture").getAsString();
+                    if (defaultTex != null && !defaultTex.isEmpty()) {
+                        modelData.getInfo().setDefaultTexture(defaultTex + ".png");
+                    }
+                }
+            } catch (Exception e) {
+                YesSteveModel.LOGGER.warn("YsmFormat: Failed to parse default_texture from ysm.json for {}", modelId, e);
+            }
+        }
+
+        return modelData;
     }
 
     private static byte[] getBytes(Map<String, byte[]> data, String fileName) throws IOException {

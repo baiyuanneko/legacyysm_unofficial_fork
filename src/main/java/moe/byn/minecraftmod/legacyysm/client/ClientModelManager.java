@@ -526,7 +526,10 @@ public class ClientModelManager {
         writeStringMap(oos, data.getModel());
         writeStringMap(oos, data.getTexture());
         writeStringMap(oos, data.getAnimation());
-        
+
+        String defaultTex = data.getInfo().getDefaultTexture();
+        oos.writeUTF(defaultTex != null ? defaultTex : "");
+
         oos.flush();
         return baos.toByteArray();
     }

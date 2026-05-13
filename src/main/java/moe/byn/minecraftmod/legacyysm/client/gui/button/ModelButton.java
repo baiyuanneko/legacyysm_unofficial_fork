@@ -146,6 +146,12 @@ public class ModelButton extends Button {
         return textures.stream()
                 .filter(t -> t.getPath().endsWith("/default.png"))
                 .findFirst()
-                .orElse(textures.get(0));
+                .orElse(textures.stream()
+                        .filter(t -> t.getPath().endsWith("/texture.png"))
+                        .findFirst()
+                        .orElse(textures.stream()
+                                .filter(t -> !t.getPath().endsWith("/arrow.png"))
+                                .findFirst()
+                                .orElse(textures.get(0))));
     }
 }

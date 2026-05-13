@@ -108,9 +108,17 @@ public class SyncPlayerModel implements CustomPacketPayload {
                             Minecraft.getInstance().level.getPlayerByUUID(message.playerUuid);
                     if (player != null) {
                         Map<String, byte[]> textureMap = finalData.getTexture();
-                        String firstTexture = textureMap.containsKey("default.png")
-                                ? "default.png"
-                                : textureMap.keySet().iterator().next();
+                        String defaultTexture = finalData.getInfo().getDefaultTexture();
+                        String firstTexture;
+                        if (defaultTexture != null && textureMap.containsKey(defaultTexture)) {
+                            firstTexture = defaultTexture;
+                        } else if (textureMap.containsKey("default.png")) {
+                            firstTexture = "default.png";
+                        } else if (textureMap.containsKey("texture.png")) {
+                            firstTexture = "texture.png";
+                        } else {
+                            firstTexture = textureMap.keySet().iterator().next();
+                        }
                         ResourceLocation textureLoc = ModelIdUtil.getSubModelId(modelLoc, firstTexture);
                         player.getData(YSMAttachments.MODEL_INFO).setModelAndTexture(modelLoc, textureLoc);
                         YesSteveModel.LOGGER.info("Set player {} model to {} with texture {}", 
@@ -138,7 +146,14 @@ public class SyncPlayerModel implements CustomPacketPayload {
             YesSteveModel.LOGGER.info("Deserialized model {}: model={}, texture={}, animation={}", 
                     modelId, model.size(), texture.size(), animation.size());
             
-            return new ModelData(modelId, isAuth, moe.byn.minecraftmod.legacyysm.model.format.Type.UNKNOWN, model, texture, animation);
+            ModelData modelData = new ModelData(modelId, isAuth, moe.byn.minecraftmod.legacyysm.model.format.Type.UNKNOWN, model, texture, animation);
+            
+            String defaultTex = ois.readUTF();
+            if (!defaultTex.isEmpty()) {
+                modelData.getInfo().setDefaultTexture(defaultTex);
+            }
+            
+            return modelData;
         } catch (Exception e) {
             YesSteveModel.LOGGER.error("Failed to deserialize model data", e);
             return null;

@@ -157,6 +157,11 @@ public final class NewYsmFormat {
             }
         }
 
+        Path ysmJsonPath = parsedDir.resolve("ysm.json");
+        if (Files.isRegularFile(ysmJsonPath)) {
+            result.put("ysm.json", FileUtils.readFileToByteArray(ysmJsonPath.toFile()));
+        }
+
         return result;
     }
 

@@ -17,6 +17,9 @@ public class ServerModelInfo {
     private final Type type;
     @Expose(serialize = false, deserialize = false)
     private String md5;
+    @SerializedName("default_texture")
+    @Expose
+    private String defaultTexture;
 
     public ServerModelInfo(Set<String> textures, boolean needAuth, Type type) {
         this.textures = textures;
@@ -46,5 +49,13 @@ public class ServerModelInfo {
 
     public void setMd5(String md5) {
         this.md5 = md5;
+    }
+
+    public String getDefaultTexture() {
+        return defaultTexture;
+    }
+
+    public void setDefaultTexture(String defaultTexture) {
+        this.defaultTexture = defaultTexture;
     }
 }
