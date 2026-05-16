@@ -118,7 +118,9 @@ public class SyncPlayerModel implements CustomPacketPayload {
                             firstTexture = "texture.png";
                         } else {
                             firstTexture = textureMap.keySet().stream()
-                                    .filter(name -> !name.equals("arrow.png"))
+                                    .filter(name -> !name.equals("arrow.png")
+                                            && !name.endsWith("_normal.png")
+                                            && !name.endsWith("_specular.png"))
                                     .findFirst()
                                     .orElseGet(() -> textureMap.keySet().iterator().next());
                         }

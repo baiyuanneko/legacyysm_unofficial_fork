@@ -111,7 +111,7 @@ public final class YsmFormat {
                 com.google.gson.JsonObject ysmRoot = YesSteveModel.GSON.fromJson(ysmJsonStr, com.google.gson.JsonObject.class);
                 if (ysmRoot != null && ysmRoot.has("properties")) {
                     String defaultTex = ysmRoot.getAsJsonObject("properties").get("default_texture").getAsString();
-                    if (defaultTex != null && !defaultTex.isEmpty()) {
+                    if (defaultTex != null && !defaultTex.isEmpty() && !defaultTex.equals("default")) {
                         modelData.getInfo().setDefaultTexture(defaultTex + ".png");
                     }
                 }

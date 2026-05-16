@@ -150,7 +150,9 @@ public class ModelButton extends Button {
                         .filter(t -> t.getPath().endsWith("/texture.png"))
                         .findFirst()
                         .orElse(textures.stream()
-                                .filter(t -> !t.getPath().endsWith("/arrow.png"))
+                                .filter(t -> !t.getPath().endsWith("/arrow.png")
+                                        && !t.getPath().endsWith("_normal.png")
+                                        && !t.getPath().endsWith("_specular.png"))
                                 .findFirst()
                                 .orElse(textures.get(0))));
     }
